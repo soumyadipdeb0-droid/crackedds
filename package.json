@@ -1,0 +1,16 @@
+{
+  "name": "crackedds",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev",
+    "build": "echo 'No build step needed'",
+    "start": "vercel dev"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2",
+    "google-auth-library": "^9.6.3",
+    "@vercel/postgres": "^0.7.2"
+  }
+}
