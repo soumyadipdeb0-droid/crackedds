@@ -550,6 +550,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
       <button class="nav-tab active" data-page="practice" onclick="switchPage('practice')">Practice</button>
 <button class="nav-tab" data-page="mock" onclick="switchPage('mock')">🎙️ Mock Interview</button>
 <button class="nav-tab" data-page="forum" onclick="switchPage('forum')">💬 Forum</button>
+<button class="nav-tab" data-page="adaptive" onclick="switchPage('adaptive')">🎯 Personalized Path</button>
       <button class="nav-tab" data-page="cases" onclick="switchPage('cases')">Case Studies</button>
       <button class="nav-tab" data-page="learn" onclick="switchPage('learn')">Learn</button>
       <button class="nav-tab" data-page="resources" onclick="switchPage('resources')">Resources</button>
@@ -593,6 +594,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 <div class="container learn-page hidden" id="learn-page" style="max-width:760px"></div>
 <div class="container mock-page hidden" id="mock-page" style="max-width:700px"></div>
 <div class="container forum-page hidden" id="forum-page" style="max-width:760px"></div>
+<div class="container adaptive-page hidden" id="adaptive-page" style="max-width:1200px"></div>
 
 <!-- ═══ PAGE: RESOURCES ═══ -->
 <div class="container resources-page hidden" id="resources-page" style="max-width:760px"></div>
@@ -1690,6 +1692,15 @@ tools:[
 
 
 let S = {
+  adaptiveActive:false,
+  adaptiveLevel:'mid',
+  adaptiveFocus:'general',
+  adaptiveDifficultyScore:50,
+  adaptiveCurrentQuestion:'',
+  adaptiveCurrentTopic:'',
+  adaptiveHistory:[],
+  adaptiveLoading:false,
+  adaptiveInput:'',
   forumActivePostId:null,
   newPostTitle:'',
   newPostContent:'',
@@ -2323,6 +2334,18 @@ function act(a,d){
     case'forum-upvote-comment':
       upvoteForumComment(args.postId, args.commentId);
       break;
+    case'adaptive-start':
+      startAdaptiveSetup();
+      break;
+    case'adaptive-save':
+      saveAdaptiveConfig();
+      break;
+    case'adaptive-submit':
+      submitAdaptiveAnswer();
+      break;
+    case'adaptive-reset':
+      resetAdaptivePath();
+      break;
     case'ai-close':S.showAI=false;window.speechSynthesis.cancel();stopListening();break;
     case'ai-start':startAI();return;
     case'ai-send':sendAI();return;
@@ -2697,6 +2720,7 @@ function switchPage(page){
   document.getElementById('resources-page').classList.toggle('hidden',page!=='resources');
   document.getElementById('mock-page').classList.toggle('hidden',page!=='mock');
   document.getElementById('forum-page').classList.toggle('hidden',page!=='forum');
+  document.getElementById('adaptive-page').classList.toggle('hidden',page!=='adaptive');
   // Update nav tabs
   document.querySelectorAll('.nav-tab').forEach(function(btn){
     btn.classList.toggle('active',btn.dataset.page===page);
@@ -2708,6 +2732,7 @@ function switchPage(page){
   if(page==='practice') render();
   if(page==='mock') renderFullMockPage();
   if(page==='forum') renderForumPage();
+  if(page==='adaptive') renderAdaptivePage();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -3412,6 +3437,270 @@ function exportCheatSheet() {
   html += '<script>window.onload = function() { window.print(); };</s' + 'cript></body></html>';
   win.document.write(html);
   win.document.close();
+}
+
+// ── 21. PERSONALIZED ADAPTIVE PATH SYSTEM ──
+function loadAdaptiveState() {
+  const saved = localStorage.getItem('ck_adaptive_state');
+  if (saved) {
+    const parsed = JSON.parse(saved);
+    Object.assign(S, parsed);
+  }
+}
+
+function saveAdaptiveState() {
+  const state = {
+    adaptiveActive: S.adaptiveActive,
+    adaptiveLevel: S.adaptiveLevel,
+    adaptiveFocus: S.adaptiveFocus,
+    adaptiveDifficultyScore: S.adaptiveDifficultyScore,
+    adaptiveCurrentQuestion: S.adaptiveCurrentQuestion,
+    adaptiveCurrentTopic: S.adaptiveCurrentTopic,
+    adaptiveHistory: S.adaptiveHistory
+  };
+  localStorage.setItem('ck_adaptive_state', JSON.stringify(state));
+}
+
+function renderAdaptivePage() {
+  loadAdaptiveState();
+  const el = document.getElementById('adaptive-page');
+  if (!el) return;
+
+  let h = `<div class="learn-hero fade-up" style="margin-bottom:24px">
+    <h2 style="font-family:'Outfit',sans-serif">🎯 AI Personalized Adaptive Path</h2>
+    <p>An interview prep program that dynamically scales difficulty and adapts topics based on your real-time performance.</p>
+  </div>`;
+
+  if (!S.adaptiveActive) {
+    // ── CONFIGURATION / SELF-ASSESSMENT WIZARD ──
+    h += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:32px;box-shadow:var(--shadow);max-width:650px;margin:0 auto">
+      <h3 style="font-family:'Outfit',sans-serif;font-weight:600;margin-bottom:20px;text-align:center">Configure Your Self-Assessment</h3>
+      
+      <div style="display:flex;flex-direction:column;gap:20px">
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px">1. Your Current Level</div>
+          <div style="display:flex;gap:8px">
+            <button class="cs-tab-btn ${S.adaptiveLevel==='junior'?'active':''}" onclick="S.adaptiveLevel='junior';renderAdaptivePage()" style="flex:1;font-size:12px">Junior (Foundational math & syntax)</button>
+            <button class="cs-tab-btn ${S.adaptiveLevel==='mid'?'active':''}" onclick="S.adaptiveLevel='mid';renderAdaptivePage()" style="flex:1;font-size:12px">Mid-level (Tradeoffs & metrics)</button>
+            <button class="cs-tab-btn ${S.adaptiveLevel==='senior'?'active':''}" onclick="S.adaptiveLevel='senior';renderAdaptivePage()" style="flex:1;font-size:12px">Senior (Distributed ML & Design)</button>
+          </div>
+        </div>
+
+        <div>
+          <div style="font-size:12px;font-weight:700;color:var(--text3);text-transform:uppercase;margin-bottom:8px">2. Industry Focus Area</div>
+          <div style="display:flex;gap:8px">
+            <button class="cs-tab-btn ${S.adaptiveFocus==='general'?'active':''}" onclick="S.adaptiveFocus='general';renderAdaptivePage()" style="flex:1;font-size:12px">General FAANG / SaaS</button>
+            <button class="cs-tab-btn ${S.adaptiveFocus==='quant'?'active':''}" onclick="S.adaptiveFocus='quant';renderAdaptivePage()" style="flex:1;font-size:12px">Quant Finance (DE Shaw style)</button>
+            <button class="cs-tab-btn ${S.adaptiveFocus==='supply'?'active':''}" onclick="S.adaptiveFocus='supply';renderAdaptivePage()" style="flex:1;font-size:12px">Supply Chain (Walmart style)</button>
+          </div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:20px;text-align:center">
+          <button class="start-btn" onclick="act('adaptive-save')" style="background:var(--accent);width:100%;font-size:13px;padding:12px">Generate Personalized Path →</button>
+        </div>
+      </div>
+    </div>`;
+  } else {
+    // ── ACTIVE ADAPTIVE WORKSPACE ──
+    const currentLevelLabel = S.adaptiveLevel.charAt(0).toUpperCase() + S.adaptiveLevel.slice(1);
+    const focusLabel = S.adaptiveFocus === 'quant' ? 'Quant Finance' : S.adaptiveFocus === 'supply' ? 'Supply Chain' : 'FAANG / SaaS';
+    
+    h += `<div class="dashboard-grid">
+      <!-- LEFT SIDEBAR: STATUS & STATS -->
+      <div class="sidebar-panel fade-up s1">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+            <span style="font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;color:var(--text)">Path Configuration</span>
+            <button class="reset-btn" onclick="act('adaptive-reset')" style="color:var(--red);font-size:10px;padding:2px 8px;margin:0">Reset Path</button>
+          </div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.6">
+            Level: <strong style="color:var(--text)">${currentLevelLabel}</strong><br>
+            Focus: <strong style="color:var(--text)">${focusLabel}</strong><br>
+            Current Difficulty: <strong style="color:var(--accent)">${S.adaptiveDifficultyScore}/100</strong>
+          </div>
+          <div style="margin-top:12px">
+            <div class="prog-bar" style="height:6px"><div class="prog-fill" style="width:${S.adaptiveDifficultyScore}%;background:var(--accent)"></div></div>
+          </div>
+        </div>
+
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow)">
+          <h4 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:12px;margin-bottom:12px;color:var(--text)">Performance History</h4>
+          ${S.adaptiveHistory.length === 0 ? `<div style="font-size:11px;color:var(--text3);text-align:center;padding:12px 0">No questions answered yet.</div>` : 
+            S.adaptiveHistory.map((h, i) => `<div style="display:flex;justify-content:space-between;font-size:11px;margin-bottom:8px;border-bottom:1px dashed var(--border);padding-bottom:4px">
+              <span style="color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px">	ext(h.topic)</span>
+              <strong style="color:${h.score>=8?'var(--green)':h.score<=5?'var(--red)':'var(--yellow)'}">${h.score}/10</strong>
+            </div>`).join('')
+          }
+        </div>
+      </div>
+
+      <!-- RIGHT SIDEBAR: CURRENT ACTIVE QUESTION & FEEDBACK -->
+      <div style="display:flex;flex-direction:column;gap:20px">
+        ${S.adaptiveLoading ? `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:32px;box-shadow:var(--shadow);text-align:center">
+          <div class="skeleton-msg" style="max-width:100%">
+            <div class="skeleton-line" style="width: 80%"></div>
+            <div class="skeleton-line" style="width: 90%"></div>
+            <div class="skeleton-line" style="width: 70%"></div>
+          </div>
+          <div style="font-size:12px;color:var(--text3);margin-top:16px">AI is selecting and elaborating your next question...</div>
+        </div>` : `
+          <div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow)">
+            <span style="font-size:9px;background:var(--surface2);border:1px solid var(--border);border-radius:4px;padding:3px 6px;font-weight:700;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Active Adaptive Question</span>
+            <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:16px;color:var(--text);margin:12px 0 16px">${esc(S.adaptiveCurrentQuestion)}</h3>
+            
+            <textarea id="adaptive-answer-text" class="ai-input" placeholder="Type your structured solution or answer here..." style="width:100%;height:150px;resize:vertical;margin-bottom:14px;padding:12px" oninput="S.adaptiveInput=this.value">${esc(S.adaptiveInput)}</textarea>
+            
+            <button class="start-btn" onclick="act('adaptive-submit')" style="background:var(--accent);font-size:12px;padding:10px 24px;border-radius:8px;margin:0">Submit Solution</button>
+          </div>
+        `}
+
+        ${S.adaptiveHistory.length > 0 && !S.adaptiveLoading ? `
+          <div style="background:var(--surface2);border:1px solid var(--border);border-radius:16px;padding:24px">
+            <h4 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;color:var(--text);margin-bottom:8px">Last Assessment Feedback</h4>
+            <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
+              Question: "&quot;${esc(S.adaptiveHistory[S.adaptiveHistory.length - 1].question)}&quot;"
+            </div>
+            <div style="font-size:13px;line-height:1.6;color:var(--text2);white-space:pre-wrap">${esc(S.adaptiveHistory[S.adaptiveHistory.length - 1].feedback)}</div>
+          </div>
+        `: ''}
+      </div>
+    </div>`;
+  }
+
+  el.innerHTML = h;
+  bind();
+}
+
+function startAdaptiveSetup() {
+  S.adaptiveActive = false;
+  renderAdaptivePage();
+}
+
+async function saveAdaptiveConfig() {
+  S.adaptiveActive = true;
+  S.adaptiveLoading = true;
+  S.adaptiveHistory = [];
+  S.adaptiveDifficultyScore = S.adaptiveLevel === 'junior' ? 30 : S.adaptiveLevel === 'mid' ? 50 : 80;
+  S.adaptiveInput = '';
+  renderAdaptivePage();
+
+  // Generate the first personalized question
+  await generateNextAdaptiveQuestion();
+}
+
+async function generateNextAdaptiveQuestion() {
+  S.adaptiveLoading = true;
+  renderAdaptivePage();
+
+  const levelLabel = S.adaptiveLevel;
+  const focusLabel = S.adaptiveFocus === 'quant' ? 'Quant Finance (DE Shaw style)' : S.adaptiveFocus === 'supply' ? 'Supply Chain (Walmart style)' : 'General FAANG / SaaS';
+  const difficulty = S.adaptiveDifficultyScore;
+
+  // Compile a prompt for the model to generate a custom scenario-based question
+  const systemPrompt = `You are an adaptive AI Data Science Coach. Your goal is to generate one personalized technical interview question tailored specifically to the user's current settings:
+- Level: ${levelLabel} (Junior/Mid-level/Senior)
+- Focus Area: ${focusLabel}
+- Target Difficulty: ${difficulty}/100 (where 0-30 is foundational theory, 30-70 is standard tradeoffs and calculations, and 70-100 is highly advanced math/systems/coding edge cases).
+
+CRITICAL RULES:
+- Generate exactly ONE technical question.
+- Do NOT output multiple questions, intro pleasantries, or outro comments. Just state the question directly.
+- The question MUST be framed within a highly realistic scenario based on the focus area (e.g. supply chain optimization, quantitative trading signals, distributed training networks).
+- Provide appropriate constraints, goals, and technical context.`;
+
+  try {
+    const question = await fetchAICompletions([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: 'Select and output my next personalized question.' }
+    ]);
+    
+    S.adaptiveCurrentQuestion = question.trim();
+    S.adaptiveCurrentTopic = focusLabel;
+  } catch(e) {
+    console.error(e);
+    S.adaptiveCurrentQuestion = 'Explain how the Central Limit Theorem behaves when sampling from a heavy-tailed distribution in a trading signal analysis.';
+    S.adaptiveCurrentTopic = focusLabel;
+  }
+
+  S.adaptiveLoading = false;
+  saveAdaptiveState();
+  renderAdaptivePage();
+}
+
+async function submitAdaptiveAnswer() {
+  if (!S.adaptiveInput.trim() || S.adaptiveLoading) return;
+
+  const answer = S.adaptiveInput.trim();
+  S.adaptiveInput = '';
+  S.adaptiveLoading = true;
+  renderAdaptivePage();
+
+  const question = S.adaptiveCurrentQuestion;
+  const systemPrompt = `You are an expert technical interviewer grading an candidate's answer.
+Question: "${question}"
+
+Evaluate the candidate's answer against high-depth industry standards. 
+You must output a JSON response containing exactly two fields:
+1. "score": An integer score out of 10.
+2. "feedback": A short, direct, constructive review (under 100 words) highlighting strengths and technical gaps.
+
+Output your response ONLY as valid JSON. Do not write markdown blocks or text wrapper.`;
+
+  try {
+    const res = await fetchAICompletions([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: answer }
+    ]);
+    
+    // Parse JSON safely
+    let score = 5;
+    let feedback = 'Thank you for your response.';
+    try {
+      const parsed = JSON.parse(res.replace(/```json/g, '').replace(/```/g, '').trim());
+      score = parsed.score || 5;
+      feedback = parsed.feedback || feedback;
+    } catch(err) {
+      console.warn('JSON parse failed for grader, looking for numeric values:', err);
+      const match = res.match(/(?:score|rating)\s*:\s*(\d+)/i);
+      if (match) score = parseInt(match[1]);
+      feedback = res;
+    }
+
+    // Dynamic adaptation of difficulty score
+    if (score >= 8) {
+      // Increase difficulty
+      S.adaptiveDifficultyScore = Math.min(100, S.adaptiveDifficultyScore + 8);
+    } else if (score <= 5) {
+      // Decrease difficulty
+      S.adaptiveDifficultyScore = Math.max(10, S.adaptiveDifficultyScore - 8);
+    }
+
+    // Save to history
+    S.adaptiveHistory.push({
+      question,
+      topic: S.adaptiveCurrentTopic,
+      score,
+      feedback
+    });
+    
+    // Generate next question
+    await generateNextAdaptiveQuestion();
+  } catch(e) {
+    console.error(e);
+    S.adaptiveLoading = false;
+    renderAdaptivePage();
+  }
+}
+
+function resetAdaptivePath() {
+  localStorage.removeItem('ck_adaptive_state');
+  S.adaptiveActive = false;
+  S.adaptiveHistory = [];
+  S.adaptiveDifficultyScore = 50;
+  S.adaptiveCurrentQuestion = '';
+  S.adaptiveCurrentTopic = '';
+  S.adaptiveInput = '';
+  renderAdaptivePage();
 }
 
 // ── 20. COMMUNITY FORUM SYSTEM ──
