@@ -2896,6 +2896,54 @@ async function fetchAICompletions(messages, currentModel) {
   }
 }
 
+async function streamAICompletions(messages, onChunk, currentModel) {
+  const modelToUse = currentModel || S.aiModel;
+  try {
+    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + S.openRouterKey,
+        'HTTP-Referer': 'http://localhost:8080',
+        'X-Title': 'CrackedDS'
+      },
+      body: JSON.stringify({
+        model: modelToUse,
+        messages: messages,
+        stream: true
+      })
+    });
+    if (!response.ok) throw new Error('API request failed');
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder('utf-8');
+    let buffer = '';
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buffer += decoder.decode(value, { stream: true });
+      const lines = buffer.split('\n');
+      buffer = lines.pop();
+      for (const line of lines) {
+        const cleanLine = line.trim();
+        if (!cleanLine.startsWith('data: ')) continue;
+        if (cleanLine === 'data: [DONE]') break;
+        try {
+          const json = JSON.parse(cleanLine.substring(6));
+          const content = json.choices?.[0]?.delta?.content;
+          if (content) onChunk(content);
+        } catch (e) {}
+      }
+    }
+  } catch (e) {
+    console.warn('Streaming failed for model ' + modelToUse + ':', e);
+    if (modelToUse !== 'openrouter/free') {
+      console.log('Attempting streaming fallback to free model router...');
+      return streamAICompletions(messages, onChunk, 'openrouter/free');
+    }
+    throw e;
+  }
+}
+
 function handleLocalMockApi(endpoint, options) {
   const method = (options.method || 'GET').toUpperCase();
   const body = options.body ? JSON.parse(options.body) : null;
@@ -3043,7 +3091,11 @@ function renderFullMockPage(){
 
       <div class="ai-messages" id="mock-msgs" style="flex:1;padding:20px;overflow-y:auto">
         ${S.mockMessages.map(m=>`<div class="msg-bubble ${m.role==='user'?'msg-user':'msg-ai'}" style="${m.role==='user'?'':'margin-right:20px'}"><div class="msg-role">${m.role==='user'?'You':'Interviewer'}</div><div style="white-space:pre-wrap;line-height:1.7">${esc(m.content)}</div></div>`).join('')}
-        ${S.mockLoading?'<div class="msg-bubble msg-ai"><div class="typing-dots"><span>●</span><span>●</span><span>●</span></div></div>':''}
+        ${S.mockLoading?`<div class="skeleton-msg">
+          <div class="skeleton-line" style="width: 85%"></div>
+          <div class="skeleton-line" style="width: 90%"></div>
+          <div class="skeleton-line" style="width: 60%"></div>
+        </div>`:''}
       </div>
 
       ${!S.mockFinished?`<div class="ai-input-row" style="background:var(--surface2);border-top:1px solid var(--border);padding:12px 16px;display:flex;gap:8px;align-items:center">
@@ -3054,7 +3106,10 @@ function renderFullMockPage(){
           }
         </button>
         <button class="voice-action-btn ${S.isListening?'listening':''}" data-a="mock-toggle-mic" title="${S.isListening?'Stop Listening':'Start Listening'}">
-          <svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>
+          ${S.isListening?
+            `<div class="audio-wave"><span></span><span></span><span></span><span></span><span></span></div>`:
+            `<svg viewBox="0 0 24 24"><path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3zm5.3-3c0 3-2.54 5.1-5.3 5.1S6.7 14 6.7 11H5c0 3.41 2.72 6.23 6 6.72V21h2v-3.28c3.28-.48 6-3.3 6-6.72h-1.7z"/></svg>`
+          }
         </button>
         <input class="ai-input" id="mock-text" placeholder="${S.isListening?'Listening... speak now':'Type your response...'}" value="${esc(S.mockInput)}" style="flex:1">
         <button class="send-btn" data-a="mock-send" style="background:var(--accent);opacity:${S.mockLoading?.5:1}">
@@ -3132,11 +3187,15 @@ async function startFullMock(){
     '- Keep all responses short and direct (under 120 words) to minimize response latency.';
 
   try {
-    const reply = await fetchAICompletions([
+    S.mockMessages = [{role:'assistant', content:''}];
+    renderFullMockPage();
+    await streamAICompletions([
       {role:'system',content:prompt},
       {role:'user',content:"I am ready to start the interview."}
-    ]);
-    S.mockMessages=[{role:'assistant',content:reply}];
+    ], (chunk) => {
+      S.mockMessages[0].content += chunk;
+      renderFullMockPage();
+    });
   } catch(e) {
     console.error(e);
     S.mockMessages=[{role:'assistant',content:"Let's begin. Question 1:\n" + selected[0].q}];
@@ -3172,11 +3231,17 @@ async function sendFullMock(){
     '- Keep responses under 120 words to minimize latency.';
 
   try {
-    const reply = await fetchAICompletions([
+    S.mockMessages.push({role:'assistant', content:''});
+    renderFullMockPage();
+    let reply = '';
+    await streamAICompletions([
       {role:'system',content:prompt},
-      ...S.mockMessages.map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.content}))
-    ]);
-    S.mockMessages.push({role:'assistant',content:reply});
+      ...S.mockMessages.slice(0, -1).map(m=>({role:m.role==='assistant'?'assistant':'user',content:m.content}))
+    ], (chunk) => {
+      reply += chunk;
+      S.mockMessages[S.mockMessages.length - 1].content = reply;
+      renderFullMockPage();
+    });
     if (reply.toLowerCase().includes('report') || reply.toLowerCase().includes('hire') || reply.toLowerCase().includes('scorecard')) {
       S.mockFinished = true;
     }
