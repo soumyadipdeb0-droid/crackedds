@@ -2663,6 +2663,13 @@ function updateThemeIcon(t){
 initTheme();
 initStreak();
   try {
+    const cachedJobs = localStorage.getItem('ck_jobs_list');
+    if (cachedJobs && cachedJobs.includes('Supply Chain Optimization')) {
+      localStorage.removeItem('ck_jobs_list'); // force reload default real jobs
+    }
+  } catch(e) {}
+  
+  try {
     const cached = localStorage.getItem('ck_events_list');
     if (cached && cached.includes('Walmart Tech Talk')) {
       localStorage.removeItem('ck_events_list'); // force reload default real events
@@ -3949,51 +3956,51 @@ function getJobsData() {
   const defaultJobs = [
     {
       id: 1,
-      title: "Quantitative Research Analyst",
-      company: "D. E. Shaw & Co.",
+      title: "Quantitative Research Analyst - Financial Research Group",
+      company: "D. E. Shaw India",
       location: "Hyderabad, India",
       roleType: "quant",
       salary: "Competitive Base + Performance Bonus",
-      description: "Build mathematical models, analyze financial data streams, and design quant trading pipelines using probability, stochastic calculus, and high-performance Python/C++ scripts.",
-      requirements: "Strong background in mathematics, statistics, physics, or computer science. Proficiency in Python and data analytics tools.",
-      link: "https://www.deshaw.com/recruit",
-      tags: ["Quant Research", "Stochastic Calculus", "Python"]
+      description: "Build mathematical models, analyze financial data streams, and design trading pipelines using probability, statistics, and high-performance Python/C++ scripts.",
+      requirements: "Strong background in mathematics, statistics, physics, or computer science from top-tier institutions. Proficiency in Python and statistical packages.",
+      link: "https://www.deshawindia.com/careers",
+      tags: ["Quant", "Finance", "Python"]
     },
     {
       id: 2,
-      title: "Senior Data Scientist - Supply Chain Optimization",
+      title: "Senior Data Scientist - Membership Growth Strategy",
       company: "Walmart Global Tech",
       location: "Bengaluru, India",
       roleType: "ds",
-      salary: "Industry Leading",
-      description: "Optimize logistics, inventory forecasting, and pricing models. Deploy transformer architectures, time series forecasting systems, and retrieval systems on high-scale transactional logs.",
-      requirements: "Expertise in regression modeling, deep learning architectures, time-series libraries (Prophet, ARIMA), and relational SQL databases.",
+      salary: "Competitive LPA (Industry Leading)",
+      description: "Optimize subscriber growth strategy and member retention for Walmart+ programs. Analyze transactional logs, design high-scale predictive ML models, and write advanced data pipelines.",
+      requirements: "Proficiency in Python, SQL, Statistics, and regression modeling. Familiarity with big data stacks (Spark, BigQuery, Snowflake).",
       link: "https://careers.walmart.com",
-      tags: ["Forecasting", "Deep Learning", "SQL"]
+      tags: ["Forecasting", "ML", "SQL"]
     },
     {
       id: 3,
-      title: "Research Scientist - Reinforcement Learning / AGI",
+      title: "Research Scientist - Artificial General Intelligence",
       company: "Google DeepMind",
-      location: "London, UK / Hybrid",
+      location: "London, UK (Hybrid)",
       roleType: "mle",
-      salary: "Top Tier",
-      description: "Conduct cutting-edge research in reinforcement learning, fluid reasoning, and multi-step agent security models. Work on next-generation model training frameworks.",
-      requirements: "PhD in Machine Learning or equivalent research publication record (NeurIPS, ICML, CVPR). Advanced PyTorch skills.",
+      salary: "£120,000 - £180,000",
+      description: "Conduct research on neural network architectures, fluid reasoning, multi-step agent security, and transformer optimization.",
+      requirements: "PhD in ML/DL with publications in top venues (NeurIPS, ICML, CVPR). Advanced PyTorch skills.",
       link: "https://careers.google.com",
       tags: ["RL", "AGI", "PyTorch"]
     },
     {
       id: 4,
-      title: "Product Data Scientist - Causal Inference & Growth",
+      title: "Product Data Scientist - Causal Inference & Experimentation",
       company: "Meta",
-      location: "Menlo Park, CA / Remote",
+      location: "Menlo Park, CA",
       roleType: "ds",
-      salary: "$180,000 - $240,000",
-      description: "Design and analyze large-scale A/B tests, build causal inference models (synthetic controls, selection bias adjustments), and define growth metrics for global product features.",
-      requirements: "Masters/PhD in statistics or quantitative field. Strong SQL query capabilities and experiment design background.",
+      salary: "$185,000 - $245,000",
+      description: "Design complex A/B testing frameworks, build causal inference models (synthetic controls, selection bias adjustments), and define core metrics for social features.",
+      requirements: "MS/PhD in Statistics or quantitative field. Strong SQL query capabilities and experiment design.",
       link: "https://careers.meta.com",
-      tags: ["Causal Inference", "AB Testing", "SQL"]
+      tags: ["Causal", "AB Testing", "SQL"]
     }
   ];
   
