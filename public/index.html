@@ -3243,7 +3243,7 @@ async function startFullMock(){
     'CRITICAL RULES:\n' +
     '- NEVER append "(Wait for response)" or similar placeholder comments to your responses.\n' +
     '- State your welcome and QUESTION 1 directly and stop writing immediately.\n' +
-    '- Keep all responses short and direct (under 120 words) to minimize response latency.';
+    '- ELABORATE ON THE QUESTION: Do not just ask the question raw. Frame it in a realistic production environment or quantitative scenario (e.g. system performance bottlenecks, supply chain metrics, financial portfolio hedging), explaining the context, goals, and constraints to make the discussion highly detailed and professional.';
 
   try {
     S.mockMessages = [{role:'assistant', content:''}];
@@ -3287,7 +3287,7 @@ async function sendFullMock(){
     'CRITICAL RULES:\n' +
     '- NEVER append "(Wait for response)" or similar placeholders to your output.\n' +
     '- Grade the previous response, ask the next question, and stop writing immediately.\n' +
-    '- Keep responses under 120 words to minimize latency.';
+    '- ELABORATE ON THE NEXT QUESTION: Frame it in a realistic production scenario, quantitative modeling constraint, or high-scale system pipeline. Provide details and technical context to make it a deep, senior-level interview question, while keeping your feedback on the previous answer direct and constructive.';
 
   try {
     S.mockMessages.push({role:'assistant', content:''});
