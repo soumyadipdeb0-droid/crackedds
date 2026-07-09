@@ -1730,6 +1730,10 @@ tools:[
 
 
 let S = {
+  events:null,
+  eventsLoading:false,
+  jobs:null,
+  jobsLoading:false,
   jobsSearch:'',
   jobsFilterRole:'all',
   jobsFilterLoc:'all',
@@ -2698,18 +2702,7 @@ function updateThemeIcon(t){
 }
 initTheme();
 initStreak();
-  try {
-    const cachedEv = localStorage.getItem('ck_events_list');
-    if (cachedEv && (!cachedEv.includes('Kaggle ARC Prize') || !cachedEv.includes('linkedin.com'))) {
-      localStorage.removeItem('ck_events_list');
-    }
-  } catch(e) {}
-  try {
-    const cachedJobs = localStorage.getItem('ck_jobs_list');
-    if (cachedJobs && (!cachedJobs.includes('D. E. Shaw India') || !cachedJobs.includes('linkedin.com'))) {
-      localStorage.removeItem('ck_jobs_list');
-    }
-  } catch(e) {}
+
   
 (function migrateForumPosts() {
   try {
@@ -3781,78 +3774,33 @@ function resetAdaptivePath() {
 }
 
 // ── 22. EVENTS & WORKSHOPS SYSTEM ──
-function getEventsData() {
-  const defaultEvents = [
-    {
-      id: 1,
-      title: "Kaggle ARC Prize 2026 AGI Progress Challenge",
-      description: "Crack the Abstraction and Reasoning Corpus (ARC-AGI) benchmark testing fluid intelligence, general reasoning, and visual learning capabilities for a $1,000,000 prize pool.",
-      type: "hackathon",
-      date: "2026-10-15",
-      organizer: "ARC Prize Foundation & Kaggle",
-      link: "https://arcprize.org",
-      tags: ["AGI", "Reasoning", "Kaggle"]
-    },
-    {
-      id: 2,
-      title: "Kaggle Pokemon TCG AI Battle Challenge",
-      description: "Build simulation agents and optimize deep reinforcement learning strategies for Pokemon Trading Card Game play in this active $240,000 global competition.",
-      type: "hackathon",
-      date: "2026-09-30",
-      organizer: "The Pokémon Company & Kaggle",
-      link: "https://www.kaggle.com/competitions",
-      tags: ["RL", "Agents", "Kaggle"]
-    },
-    {
-      id: 3,
-      title: "ACM SIGKDD 2026 Conference on Knowledge Discovery & Data Mining",
-      description: "The premier international conference presenting scientific research in data mining, statistics, big data architectures, and large-scale predictive models in Jeju, South Korea.",
-      type: "conference",
-      date: "2026-08-09",
-      organizer: "SIGKDD Org",
-      link: "https://kdd.org",
-      tags: ["Data Science", "Research", "KDD"]
-    },
-    {
-      id: 4,
-      title: "NeurIPS 2026: Neural Information Processing Systems Conference",
-      description: "The largest global artificial intelligence conference covering deep neural networks, transformer math, reinforcement learning breakthroughs, and generative AI research in Sydney, Australia.",
-      type: "conference",
-      date: "2026-12-06",
-      organizer: "NeurIPS Foundation",
-      link: "https://neurips.cc",
-      tags: ["Deep Learning", "Research", "Sydney"]
-    },
-    {
-      id: 5,
-      title: "D. E. Shaw Quantitative Research Recruitment Drive 2026",
-      description: "Application window opens for Quantitative Analyst, Quantitative Researcher, and Machine Learning Researcher roles globally. Track details on their official LinkedIn corporate board.",
-      type: "webinar",
-      date: "2026-09-01",
-      organizer: "D. E. Shaw & Co.",
-      link: "https://www.linkedin.com/company/d-e-shaw-group/",
-      tags: ["Quant Research", "DE Shaw", "Careers"]
-    }
-  ];
-  
-  const saved = localStorage.getItem('ck_events_list');
-  if (!saved) {
-    localStorage.setItem('ck_events_list', JSON.stringify(defaultEvents));
-    return defaultEvents;
-  }
-  return JSON.parse(saved);
-}
-
-function saveEventsData(events) {
-  localStorage.setItem('ck_events_list', JSON.stringify(events));
-}
-
-function renderEventsPage() {
+async function renderEventsPage() {
   const el = document.getElementById('events-page');
   if (!el) return;
-  
-  const events = getEventsData();
-  
+
+  if (S.events === null) {
+    if (!S.eventsLoading) {
+      S.eventsLoading = true;
+      el.innerHTML = `<div style="padding:80px 20px;text-align:center;color:var(--text3)">
+        <div class="shimmer" style="height:24px;width:180px;margin:0 auto 12px;border-radius:6px"></div>
+        <div class="shimmer" style="height:14px;width:280px;margin:0 auto;border-radius:4px"></div>
+      </div>`;
+      try {
+        const r = await fetch(API_BASE + '/events');
+        const data = await r.json();
+        S.events = data.events || [];
+      } catch(e) {
+        console.error('Events load error:', e);
+        S.events = [];
+      }
+      S.eventsLoading = false;
+    } else {
+      return;
+    }
+  }
+
+  const events = S.events;
+
   // Filter & Search Logic
   const filtered = events.filter(e => {
     const matchSearch = e.title.toLowerCase().includes(S.eventsSearch.toLowerCase()) || 
@@ -3861,10 +3809,10 @@ function renderEventsPage() {
     const matchType = S.eventsFilter === 'all' || e.type === S.eventsFilter;
     return matchSearch && matchType;
   });
-  
+
   // Sort events by date (nearest first)
   filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
-  
+
   let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
     <div class="learn-hero" style="margin-bottom:0">
       <h2 style="font-family:'Outfit',sans-serif">📅 Industry Events & Workshops</h2>
@@ -3874,7 +3822,7 @@ function renderEventsPage() {
       ${S.eventsFormOpen ? 'Close Form' : 'Submit Event'}
     </button>
   </div>`;
-  
+
   if (S.eventsFormOpen) {
     // ── SUBMISSION FORM ──
     h += `<div style="background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:24px;margin-bottom:28px">
@@ -3900,7 +3848,7 @@ function renderEventsPage() {
       </div>
     </div>`;
   }
-  
+
   // ── FILTER BAR ──
   h += `<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
     <input type="text" placeholder="Search events..." value="${esc(S.eventsSearch)}" oninput="S.eventsSearch=this.value;renderEventsPage()" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:12.5px;font-family:inherit">
@@ -3912,7 +3860,7 @@ function renderEventsPage() {
       <button class="cs-tab-btn ${S.eventsFilter==='conference'?'active':''}" onclick="S.eventsFilter='conference';renderEventsPage()" style="font-size:11px;padding:6px 12px">Conferences</button>
     </div>
   </div>`;
-  
+
   // ── EVENTS LIST GRID ──
   if (filtered.length === 0) {
     h += `<div style="text-align:center;padding:60px 20px;background:var(--surface);border:1px solid var(--border);border-radius:16px;color:var(--text3)">
@@ -3924,152 +3872,108 @@ function renderEventsPage() {
       ${filtered.map(e => {
         const dateStr = new Date(e.date).toLocaleDateString(undefined, {month:'short', day:'numeric', year:'numeric'});
         const typeBadgeColor = e.type === 'hackathon' ? 'var(--green)' : e.type === 'webinar' ? 'var(--accent)' : 'var(--yellow)';
+        const tagsArr = (e.tags || '').split(',').map(t => t.trim()).filter(Boolean);
         return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between;transition:transform 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
           <div>
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
               <span style="background:${typeBadgeColor}15;color:${typeBadgeColor};font-size:8.5px;font-weight:800;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px">${e.type}</span>
-              <span style="font-size:11px;color:var(--text3);font-weight:600">${dateStr}</span>
+              <span style="font-size:11px;color:var(--text3);font-weight:600">	ext(dateStr)</span>
             </div>
             
             <h4 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;color:var(--text);margin-bottom:8px;line-height:1.3">${esc(e.title)}</h4>
-            <div style="font-size:10.5px;color:var(--text3);margin-bottom:12px">Organized by <strong style="color:var(--text2)">${esc(e.organizer)}</strong></div>
+            <div style="font-size:10.5px;color:var(--text3);margin-bottom:12px">Organized by <strong style="color:var(--text2)">	ext(e.organizer)</strong></div>
             <p style="font-size:12px;color:var(--text2);line-height:1.5;margin-bottom:16px">${esc(e.description)}</p>
           </div>
           
           <div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:14px">
-              ${(e.tags || []).map(t => `<span style="background:var(--surface2);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600">#${t}</span>`).join('')}
+              ${tagsArr.map(t => `<span style="background:var(--surface2);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600">#${t}</span>`).join('')}
             </div>
-            <a href="${e.link}" target="_blank" rel="noopener" style="display:block;text-align:center;background:var(--surface2);border:1px solid var(--border);color:var(--accent);text-decoration:none;font-size:11px;font-weight:700;padding:8px;border-radius:8px;transition:all 0.2s" onmouseover="this.style.background='var(--accent)';this.style.color='#fff'" onmouseout="this.style.background='var(--surface2)';this.style.color='var(--accent)'">Register / Join Event ↗</a>
+            <a href="${e.link}" target="_blank" rel="noopener" style="display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;font-size:11px;font-weight:700;padding:10px;border-radius:8px;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Event Details ↗</a>
           </div>
         </div>`;
       }).join('')}
     </div>`;
   }
-  
+
   el.innerHTML = h;
   bind();
 }
 
-function submitEventForm() {
+async function submitEventForm() {
   const title = document.getElementById('ev-title')?.value.trim();
-  const org = document.getElementById('ev-org')?.value.trim();
+  const organizer = document.getElementById('ev-org')?.value.trim();
   const date = document.getElementById('ev-date')?.value.trim();
   const type = document.getElementById('ev-type')?.value;
-  const desc = document.getElementById('ev-desc')?.value.trim();
+  const description = document.getElementById('ev-desc')?.value.trim();
   const link = document.getElementById('ev-link')?.value.trim();
-  const tagsVal = document.getElementById('ev-tags')?.value.trim();
-  
-  if (!title || !org || !date || !desc || !link) {
+  const tags = document.getElementById('ev-tags')?.value.trim();
+
+  if (!title || !organizer || !date || !description || !link) {
     alert('Please fill in all required event fields.');
     return;
   }
-  
-  const events = getEventsData();
-  const tags = tagsVal ? tagsVal.split(',').map(t => t.trim()) : [];
-  
-  const newEvent = {
-    id: Date.now(),
-    title,
-    description: desc,
-    type,
-    date,
-    organizer: org,
-    link,
-    tags
-  };
-  
-  events.push(newEvent);
-  saveEventsData(events);
-  
-  S.eventsFormOpen = false;
-  renderEventsPage();
+
+  try {
+    const r = await fetch(API_BASE + '/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, description, type, date, organizer, link, tags: tags || '' })
+    });
+    if (r.ok) {
+      S.events = null; // reload fresh
+      S.eventsFormOpen = false;
+      renderEventsPage();
+    } else {
+      const err = await r.json();
+      alert('Event publication failed: ' + err.message);
+    }
+  } catch(e) {
+    alert('Failed to publish event: ' + e.message);
+  }
 }
 
 // ── 23. CAREERS & JOB BOARD SYSTEM ──
-function getJobsData() {
-  const defaultJobs = [
-    {
-      id: 1,
-      title: "Quantitative Research Analyst - Financial Research Group",
-      company: "D. E. Shaw India",
-      location: "Hyderabad, India",
-      roleType: "quant",
-      salary: "Competitive Base + Performance Bonus",
-      description: "Build mathematical models, analyze financial data streams, and design trading pipelines using probability, statistics, and high-performance Python/C++ scripts.",
-      requirements: "Strong background in mathematics, statistics, physics, or computer science from top-tier institutions. Proficiency in Python and statistical packages.",
-      link: "https://www.linkedin.com/company/d-e-shaw-group/jobs/",
-      tags: ["Quant", "Finance", "Python"]
-    },
-    {
-      id: 2,
-      title: "Senior Data Scientist - Membership Growth Strategy",
-      company: "Walmart Global Tech",
-      location: "Bengaluru, India",
-      roleType: "ds",
-      salary: "Competitive LPA (Industry Leading)",
-      description: "Optimize subscriber growth strategy and member retention for Walmart+ programs. Analyze transactional logs, design high-scale predictive ML models, and write advanced data pipelines.",
-      requirements: "Proficiency in Python, SQL, Statistics, and regression modeling. Familiarity with big data stacks (Spark, BigQuery, Snowflake).",
-      link: "https://careers.walmart.com",
-      tags: ["Forecasting", "ML", "SQL"]
-    },
-    {
-      id: 3,
-      title: "Research Scientist - Artificial General Intelligence",
-      company: "Google DeepMind",
-      location: "London, UK (Hybrid)",
-      roleType: "mle",
-      salary: "£120,000 - £180,000",
-      description: "Conduct research on neural network architectures, fluid reasoning, multi-step agent security, and transformer optimization.",
-      requirements: "PhD in ML/DL with publications in top venues (NeurIPS, ICML, CVPR). Advanced PyTorch skills.",
-      link: "https://careers.google.com",
-      tags: ["RL", "AGI", "PyTorch"]
-    },
-    {
-      id: 4,
-      title: "Product Data Scientist - Causal Inference & Experimentation",
-      company: "Meta",
-      location: "Menlo Park, CA",
-      roleType: "ds",
-      salary: "$185,000 - $245,000",
-      description: "Design complex A/B testing frameworks, build causal inference models (synthetic controls, selection bias adjustments), and define core metrics for social features.",
-      requirements: "MS/PhD in Statistics or quantitative field. Strong SQL query capabilities and experiment design.",
-      link: "https://careers.meta.com",
-      tags: ["Causal", "AB Testing", "SQL"]
-    }
-  ];
-  
-  const saved = localStorage.getItem('ck_jobs_list');
-  if (!saved) {
-    localStorage.setItem('ck_jobs_list', JSON.stringify(defaultJobs));
-    return defaultJobs;
-  }
-  return JSON.parse(saved);
-}
-
-function saveJobsData(jobs) {
-  localStorage.setItem('ck_jobs_list', JSON.stringify(jobs));
-}
-
-function renderJobsPage() {
+async function renderJobsPage() {
   const el = document.getElementById('jobs-page');
   if (!el) return;
-  
-  const jobs = getJobsData();
-  
+
+  if (S.jobs === null) {
+    if (!S.jobsLoading) {
+      S.jobsLoading = true;
+      el.innerHTML = `<div style="padding:80px 20px;text-align:center;color:var(--text3)">
+        <div class="shimmer" style="height:24px;width:180px;margin:0 auto 12px;border-radius:6px"></div>
+        <div class="shimmer" style="height:14px;width:280px;margin:0 auto;border-radius:4px"></div>
+      </div>`;
+      try {
+        const r = await fetch(API_BASE + '/jobs');
+        const data = await r.json();
+        S.jobs = data.jobs || [];
+      } catch(e) {
+        console.error('Jobs load error:', e);
+        S.jobs = [];
+      }
+      S.jobsLoading = false;
+    } else {
+      return;
+    }
+  }
+
+  const jobs = S.jobs;
+
   // Filter & Search Logic
   const filtered = jobs.filter(j => {
     const matchSearch = j.title.toLowerCase().includes(S.jobsSearch.toLowerCase()) || 
                         j.company.toLowerCase().includes(S.jobsSearch.toLowerCase()) || 
                         j.description.toLowerCase().includes(S.jobsSearch.toLowerCase());
-    const matchRole = S.jobsFilterRole === 'all' || j.roleType === S.jobsFilterRole;
+    const matchRole = S.jobsFilterRole === 'all' || j.role_type === S.jobsFilterRole;
     const matchLoc = S.jobsFilterLoc === 'all' || 
                      (S.jobsFilterLoc === 'remote' && j.location.toLowerCase().includes('remote')) ||
                      (S.jobsFilterLoc === 'india' && j.location.toLowerCase().includes('india')) ||
                      (S.jobsFilterLoc === 'global' && !j.location.toLowerCase().includes('india') && !j.location.toLowerCase().includes('remote'));
     return matchSearch && matchRole && matchLoc;
   });
-  
+
   let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
     <div class="learn-hero" style="margin-bottom:0">
       <h2 style="font-family:'Outfit',sans-serif">💼 Careers & Tech Jobs</h2>
@@ -4079,7 +3983,7 @@ function renderJobsPage() {
       ${S.jobsFormOpen ? 'Close Form' : 'Submit Posting'}
     </button>
   </div>`;
-  
+
   if (S.jobsFormOpen) {
     // ── SUBMISSION FORM ──
     h += `<div style="background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:24px;margin-bottom:28px">
@@ -4107,7 +4011,7 @@ function renderJobsPage() {
       </div>
     </div>`;
   }
-  
+
   // ── FILTER BAR ──
   h += `<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
     <input type="text" placeholder="Search jobs or companies..." value="${esc(S.jobsSearch)}" oninput="S.jobsSearch=this.value;renderJobsPage()" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:12.5px;font-family:inherit">
@@ -4131,7 +4035,7 @@ function renderJobsPage() {
       </select>
     </div>
   </div>`;
-  
+
   // ── JOBS GRID ──
   if (filtered.length === 0) {
     h += `<div style="text-align:center;padding:60px 20px;background:var(--surface);border:1px solid var(--border);border-radius:16px;color:var(--text3)">
@@ -4141,7 +4045,8 @@ function renderJobsPage() {
   } else {
     h += `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:20px">
       ${filtered.map(j => {
-        const roleLabel = j.roleType === 'quant' ? 'Quant' : j.roleType === 'mle' ? 'ML Engineer' : j.roleType === 'da' ? 'Data Analyst' : 'Data Scientist';
+        const roleLabel = j.role_type === 'quant' ? 'Quant' : j.role_type === 'mle' ? 'ML Engineer' : j.role_type === 'da' ? 'Data Analyst' : 'Data Scientist';
+        const tagsArr = (j.tags || '').split(',').map(t => t.trim()).filter(Boolean);
         return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between;transition:all 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
           <div>
             <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
@@ -4153,7 +4058,7 @@ function renderJobsPage() {
             
             <h4 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:15px;color:var(--text);margin-bottom:6px;line-height:1.3">${esc(j.title)}</h4>
             <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
-              <strong style="color:var(--text2)">${j.company}</strong> · ${esc(j.location)}
+              <strong style="color:var(--text2)">${esc(j.company)}</strong> · ${esc(j.location)}
             </div>
             <p style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:14px">${esc(j.description)}</p>
             
@@ -4165,7 +4070,7 @@ function renderJobsPage() {
           
           <div>
             <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
-              ${(j.tags || []).map(t => `<span style="background:var(--surface2);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600">#${t}</span>`).join('')}
+              ${tagsArr.map(t => `<span style="background:var(--surface2);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600">#${t}</span>`).join('')}
             </div>
             <a href="${j.link}" target="_blank" rel="noopener" style="display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;font-size:11px;font-weight:700;padding:10px;border-radius:8px;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Apply Externally ↗</a>
           </div>
@@ -4173,48 +4078,44 @@ function renderJobsPage() {
       }).join('')}
     </div>`;
   }
-  
+
   el.innerHTML = h;
   bind();
 }
 
-function submitJobForm() {
+async function submitJobForm() {
   const title = document.getElementById('job-title')?.value.trim();
   const company = document.getElementById('job-comp')?.value.trim();
   const location = document.getElementById('job-loc')?.value.trim();
   const salary = document.getElementById('job-sal')?.value.trim();
   const roleType = document.getElementById('job-role')?.value;
-  const desc = document.getElementById('job-desc')?.value.trim();
-  const req = document.getElementById('job-req')?.value.trim();
+  const description = document.getElementById('job-desc')?.value.trim();
+  const requirements = document.getElementById('job-req')?.value.trim();
   const link = document.getElementById('job-link')?.value.trim();
-  const tagsVal = document.getElementById('job-tags')?.value.trim();
-  
-  if (!title || !company || !location || !salary || !desc || !req || !link) {
+  const tags = document.getElementById('job-tags')?.value.trim();
+
+  if (!title || !company || !location || !salary || !description || !requirements || !link) {
     alert('Please fill in all required job posting fields.');
     return;
   }
-  
-  const jobs = getJobsData();
-  const tags = tagsVal ? tagsVal.split(',').map(t => t.trim()) : [];
-  
-  const newJob = {
-    id: Date.now(),
-    title,
-    company,
-    location,
-    roleType,
-    salary,
-    description: desc,
-    requirements: req,
-    link,
-    tags
-  };
-  
-  jobs.push(newJob);
-  saveJobsData(jobs);
-  
-  S.jobsFormOpen = false;
-  renderJobsPage();
+
+  try {
+    const r = await fetch(API_BASE + '/jobs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, company, location, roleType, salary, description, requirements, link, tags: tags || '' })
+    });
+    if (r.ok) {
+      S.jobs = null; // reload fresh
+      S.jobsFormOpen = false;
+      renderJobsPage();
+    } else {
+      const err = await r.json();
+      alert('Job publication failed: ' + err.message);
+    }
+  } catch(e) {
+    alert('Failed to publish job: ' + e.message);
+  }
 }
 
 // ── 20. COMMUNITY FORUM SYSTEM ──
