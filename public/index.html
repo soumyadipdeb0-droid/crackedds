@@ -2650,6 +2650,13 @@ function updateThemeIcon(t){
 }
 initTheme();
 initStreak();
+  try {
+    const cached = localStorage.getItem('ck_events_list');
+    if (cached && cached.includes('Walmart Tech Talk')) {
+      localStorage.removeItem('ck_events_list'); // force reload default real events
+    }
+  } catch(e) {}
+  
 (function migrateForumPosts() {
   try {
     const saved = localStorage.getItem('ck_forum_posts');
@@ -3722,53 +3729,53 @@ function getEventsData() {
   const defaultEvents = [
     {
       id: 1,
-      title: "D. E. Shaw & Co. Quantitative Research Seminar",
-      description: "Learn about mathematical modeling, statistical arbitrage, and quantitative research workflows directly from DE Shaw scientists.",
-      type: "webinar",
-      date: new Date(Date.now() + 3600000 * 24 * 5).toISOString().split('T')[0], // 5 days from now
-      organizer: "D. E. Shaw & Co.",
-      link: "https://www.deshaw.com",
-      tags: ["Quant", "Math", "Careers"]
+      title: "Kaggle ARC Prize 2026 AGI Progress Challenge",
+      description: "Crack the Abstraction and Reasoning Corpus (ARC-AGI) benchmark testing fluid intelligence, general reasoning, and visual learning capabilities for a $1,000,000 prize pool.",
+      type: "hackathon",
+      date: "2026-10-15",
+      organizer: "ARC Prize Foundation & Kaggle",
+      link: "https://arcprize.org",
+      tags: ["AGI", "Reasoning", "Kaggle"]
     },
     {
       id: 2,
-      title: "Walmart Tech Talk: Large Language Models in Supply Chain",
-      description: "Discover how Walmart Global Tech implements transformers and retrieval-augmented systems for dynamic demand forecasting and inventory logs.",
-      type: "webinar",
-      date: new Date(Date.now() + 3600000 * 24 * 12).toISOString().split('T')[0], // 12 days from now
-      organizer: "Walmart Global Tech",
-      link: "https://tech.walmart.com",
-      tags: ["NLP", "LLM", "Logistics"]
+      title: "Kaggle Pokemon TCG AI Battle Challenge",
+      description: "Build simulation agents and optimize deep reinforcement learning strategies for Pokemon Trading Card Game play in this active $240,000 global competition.",
+      type: "hackathon",
+      date: "2026-09-30",
+      organizer: "The Pokémon Company & Kaggle",
+      link: "https://www.kaggle.com/competitions",
+      tags: ["RL", "Agents", "Kaggle"]
     },
     {
       id: 3,
-      title: "Kaggle Grand Championship 2026: Time Series Forecasting",
-      description: "Join the largest global competitive time series challenge of the year. Build optimal estimators on transactional database logs.",
-      type: "hackathon",
-      date: new Date(Date.now() + 3600000 * 24 * 20).toISOString().split('T')[0],
-      organizer: "Kaggle",
-      link: "https://www.kaggle.com/competitions",
-      tags: ["Kaggle", "Time Series", "ML"]
+      title: "ACM SIGKDD 2026 Conference on Knowledge Discovery & Data Mining",
+      description: "The premier international conference presenting scientific research in data mining, statistics, big data architectures, and large-scale predictive models in Jeju, South Korea.",
+      type: "conference",
+      date: "2026-08-09",
+      organizer: "SIGKDD Org",
+      link: "https://kdd.org",
+      tags: ["Data Science", "Research", "KDD"]
     },
     {
       id: 4,
       title: "NeurIPS 2026: Neural Information Processing Systems Conference",
-      description: "The premier global conference on deep learning, reinforcement learning, and advanced AI systems architectures.",
+      description: "The largest global artificial intelligence conference covering deep neural networks, transformer math, reinforcement learning breakthroughs, and generative AI research in Sydney, Australia.",
       type: "conference",
-      date: "2026-12-10",
+      date: "2026-12-06",
       organizer: "NeurIPS Foundation",
       link: "https://neurips.cc",
-      tags: ["Research", "Deep Learning", "AI"]
+      tags: ["Deep Learning", "Research", "Sydney"]
     },
     {
       id: 5,
-      title: "Indian Statistical Institute Kolkata - Data Science Hackathon",
-      description: "Participate in the annual ISI Kolkata Hackathon. Solve advanced statistical and causality problems on real-world datasets.",
-      type: "hackathon",
-      date: new Date(Date.now() + 3600000 * 24 * 8).toISOString().split('T')[0],
-      organizer: "ISI Kolkata",
-      link: "https://www.isical.ac.in",
-      tags: ["Statistics", "Causality", "Coding"]
+      title: "D. E. Shaw Quantitative Research Recruitment Drive 2026",
+      description: "Application window opens for Quantitative Analyst, Quantitative Researcher, and Machine Learning Researcher roles globally. Apply early on their careers portal.",
+      type: "webinar",
+      date: "2026-09-01",
+      organizer: "D. E. Shaw & Co.",
+      link: "https://www.deshaw.com/recruit",
+      tags: ["Quant Research", "DE Shaw", "Careers"]
     }
   ];
   
