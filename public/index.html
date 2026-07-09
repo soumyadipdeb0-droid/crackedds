@@ -2556,6 +2556,27 @@ function updateThemeIcon(t){
 }
 initTheme();
 initStreak();
+(function migrateForumPosts() {
+  try {
+    const saved = localStorage.getItem('ck_forum_posts');
+    if (saved) {
+      let posts = JSON.parse(saved);
+      let updated = false;
+      posts.forEach(p => {
+        if (p.authorEmail === 'soumyadipdeb0@gmail.com') {
+          p.authorEmail = 'deshaw_prep@example.com';
+          updated = true;
+        }
+      });
+      if (updated) {
+        localStorage.setItem('ck_forum_posts', JSON.stringify(posts));
+      }
+    }
+  } catch(e) {
+    console.error('Forum migration error:', e);
+  }
+}());
+
 
 // ═══════════════════════════════════════════════════════════
 // BOOKMARKS
