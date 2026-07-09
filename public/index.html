@@ -552,7 +552,6 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 <button class="nav-tab" data-page="forum" onclick="switchPage('forum')">💬 Forum</button>
 <button class="nav-tab" data-page="adaptive" onclick="switchPage('adaptive')">🎯 Personalized Path</button>
 <button class="nav-tab" data-page="events" onclick="switchPage('events')">📅 Events & Workshops</button>
-<button class="nav-tab" data-page="jobs" onclick="switchPage('jobs')">💼 Careers & Jobs</button>
       <button class="nav-tab" data-page="cases" onclick="switchPage('cases')">Case Studies</button>
       <button class="nav-tab" data-page="learn" onclick="switchPage('learn')">Learn</button>
       <button class="nav-tab" data-page="resources" onclick="switchPage('resources')">Resources</button>
@@ -1695,10 +1694,6 @@ tools:[
 
 
 let S = {
-  jobsSearch:'',
-  jobsFilterRole:'all',
-  jobsFilterLoc:'all',
-  jobsFormOpen:false,
   eventsSearch:'',
   eventsFilter:'all',
   eventsFormOpen:false,
@@ -2363,13 +2358,6 @@ function act(a,d){
     case'events-submit-form':
       submitEventForm();
       break;
-    case'jobs-toggle-form':
-      S.jobsFormOpen = !S.jobsFormOpen;
-      renderJobsPage();
-      break;
-    case'jobs-submit-form':
-      submitJobForm();
-      break;
     case'ai-close':S.showAI=false;window.speechSynthesis.cancel();stopListening();break;
     case'ai-start':startAI();return;
     case'ai-send':sendAI();return;
@@ -2665,10 +2653,17 @@ initStreak();
   try {
     const cachedJobs = localStorage.getItem('ck_jobs_list');
     if (cachedJobs && cachedJobs.includes('Supply Chain Optimization')) {
-      localStorage.removeItem('ck_jobs_list'); // force reload default real jobs
+      localStorage.removeItem('ck_jobs_list');
     }
   } catch(e) {}
-  
+
+  try {
+    const cachedJobs = localStorage.getItem('ck_jobs_list');
+    if (cachedJobs && cachedJobs.includes('Supply Chain Optimization')) {
+      localStorage.removeItem('ck_jobs_list');
+    }
+  } catch(e) {}
+
   try {
     const cached = localStorage.getItem('ck_events_list');
     if (cached && cached.includes('Walmart Tech Talk')) {
@@ -2760,7 +2755,6 @@ function switchPage(page){
   document.getElementById('forum-page').classList.toggle('hidden',page!=='forum');
   document.getElementById('adaptive-page').classList.toggle('hidden',page!=='adaptive');
   document.getElementById('events-page').classList.toggle('hidden',page!=='events');
-  document.getElementById('jobs-page').classList.toggle('hidden',page!=='jobs');
   // Update nav tabs
   document.querySelectorAll('.nav-tab').forEach(function(btn){
     btn.classList.toggle('active',btn.dataset.page===page);
@@ -2774,7 +2768,6 @@ function switchPage(page){
   if(page==='forum') renderForumPage();
   if(page==='adaptive') renderAdaptivePage();
   if(page==='events') renderEventsPage();
-  if(page==='jobs') renderJobsPage();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -3949,237 +3942,6 @@ function submitEventForm() {
   
   S.eventsFormOpen = false;
   renderEventsPage();
-}
-
-// ── 23. CAREERS & JOB BOARD SYSTEM ──
-function getJobsData() {
-  const defaultJobs = [
-    {
-      id: 1,
-      title: "Quantitative Research Analyst - Financial Research Group",
-      company: "D. E. Shaw India",
-      location: "Hyderabad, India",
-      roleType: "quant",
-      salary: "Competitive Base + Performance Bonus",
-      description: "Build mathematical models, analyze financial data streams, and design trading pipelines using probability, statistics, and high-performance Python/C++ scripts.",
-      requirements: "Strong background in mathematics, statistics, physics, or computer science from top-tier institutions. Proficiency in Python and statistical packages.",
-      link: "https://www.deshawindia.com/careers",
-      tags: ["Quant", "Finance", "Python"]
-    },
-    {
-      id: 2,
-      title: "Senior Data Scientist - Membership Growth Strategy",
-      company: "Walmart Global Tech",
-      location: "Bengaluru, India",
-      roleType: "ds",
-      salary: "Competitive LPA (Industry Leading)",
-      description: "Optimize subscriber growth strategy and member retention for Walmart+ programs. Analyze transactional logs, design high-scale predictive ML models, and write advanced data pipelines.",
-      requirements: "Proficiency in Python, SQL, Statistics, and regression modeling. Familiarity with big data stacks (Spark, BigQuery, Snowflake).",
-      link: "https://careers.walmart.com",
-      tags: ["Forecasting", "ML", "SQL"]
-    },
-    {
-      id: 3,
-      title: "Research Scientist - Artificial General Intelligence",
-      company: "Google DeepMind",
-      location: "London, UK (Hybrid)",
-      roleType: "mle",
-      salary: "£120,000 - £180,000",
-      description: "Conduct research on neural network architectures, fluid reasoning, multi-step agent security, and transformer optimization.",
-      requirements: "PhD in ML/DL with publications in top venues (NeurIPS, ICML, CVPR). Advanced PyTorch skills.",
-      link: "https://careers.google.com",
-      tags: ["RL", "AGI", "PyTorch"]
-    },
-    {
-      id: 4,
-      title: "Product Data Scientist - Causal Inference & Experimentation",
-      company: "Meta",
-      location: "Menlo Park, CA",
-      roleType: "ds",
-      salary: "$185,000 - $245,000",
-      description: "Design complex A/B testing frameworks, build causal inference models (synthetic controls, selection bias adjustments), and define core metrics for social features.",
-      requirements: "MS/PhD in Statistics or quantitative field. Strong SQL query capabilities and experiment design.",
-      link: "https://careers.meta.com",
-      tags: ["Causal", "AB Testing", "SQL"]
-    }
-  ];
-  
-  const saved = localStorage.getItem('ck_jobs_list');
-  if (!saved) {
-    localStorage.setItem('ck_jobs_list', JSON.stringify(defaultJobs));
-    return defaultJobs;
-  }
-  return JSON.parse(saved);
-}
-
-function saveJobsData(jobs) {
-  localStorage.setItem('ck_jobs_list', JSON.stringify(jobs));
-}
-
-function renderJobsPage() {
-  const el = document.getElementById('jobs-page');
-  if (!el) return;
-  
-  const jobs = getJobsData();
-  
-  // Filter & Search Logic
-  const filtered = jobs.filter(j => {
-    const matchSearch = j.title.toLowerCase().includes(S.jobsSearch.toLowerCase()) || 
-                        j.company.toLowerCase().includes(S.jobsSearch.toLowerCase()) || 
-                        j.description.toLowerCase().includes(S.jobsSearch.toLowerCase());
-    const matchRole = S.jobsFilterRole === 'all' || j.roleType === S.jobsFilterRole;
-    const matchLoc = S.jobsFilterLoc === 'all' || 
-                     (S.jobsFilterLoc === 'remote' && j.location.toLowerCase().includes('remote')) ||
-                     (S.jobsFilterLoc === 'india' && j.location.toLowerCase().includes('india')) ||
-                     (S.jobsFilterLoc === 'global' && !j.location.toLowerCase().includes('india') && !j.location.toLowerCase().includes('remote'));
-    return matchSearch && matchRole && matchLoc;
-  });
-  
-  let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
-    <div class="learn-hero" style="margin-bottom:0">
-      <h2 style="font-family:'Outfit',sans-serif">💼 Careers & Tech Jobs</h2>
-      <p>Apply to active quantitative research, data science, and machine learning engineer openings.</p>
-    </div>
-    <button class="start-btn" onclick="act('jobs-toggle-form')" style="background:var(--accent);font-size:12px;padding:8px 20px;border-radius:8px;margin:0">
-      ${S.jobsFormOpen ? 'Close Form' : 'Submit Posting'}
-    </button>
-  </div>`;
-  
-  if (S.jobsFormOpen) {
-    // ── SUBMISSION FORM ──
-    h += `<div style="background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:24px;margin-bottom:28px">
-      <h3 style="font-family:'Outfit',sans-serif;font-weight:600;margin-bottom:16px;font-size:15px;color:var(--text)">Post a Tech / Quant Job Opening</h3>
-      <div style="display:flex;flex-direction:column;gap:12px">
-        <input type="text" id="job-title" class="ai-input" placeholder="Role Title (e.g. Quantitative Researcher)" style="width:100%;padding:10px">
-        <input type="text" id="job-comp" class="ai-input" placeholder="Company Name (e.g. D. E. Shaw & Co.)" style="width:100%;padding:10px">
-        <div style="display:flex;gap:10px">
-          <input type="text" id="job-loc" class="ai-input" placeholder="Location (e.g. Hyderabad, India / Remote)" style="flex:1;padding:10px">
-          <input type="text" id="job-sal" class="ai-input" placeholder="Salary Package (e.g. $150k - $180k)" style="flex:1;padding:10px">
-        </div>
-        <select id="job-role" class="ai-input" style="width:100%;padding:10px;background:var(--surface2);color:var(--text);border:1px solid var(--border)">
-          <option value="ds">Data Scientist</option>
-          <option value="mle">Machine Learning Engineer</option>
-          <option value="quant">Quantitative Analyst</option>
-          <option value="da">Data Analyst</option>
-        </select>
-        <textarea id="job-desc" class="ai-input" placeholder="Brief job description and responsibilities..." style="width:100%;height:80px;resize:vertical;padding:12px"></textarea>
-        <textarea id="job-req" class="ai-input" placeholder="Required background and core skills (e.g. PyTorch, SQL, Probability)..." style="width:100%;height:60px;resize:vertical;padding:12px"></textarea>
-        <input type="text" id="job-link" class="ai-input" placeholder="Apply Link URL (e.g. https://careers.company.com/...)" style="width:100%;padding:10px">
-        <input type="text" id="job-tags" class="ai-input" placeholder="Tags (comma separated, e.g. SQL, PyTorch, AB Testing)" style="width:100%;padding:10px">
-        <div style="text-align:right;margin-top:8px">
-          <button class="start-btn" onclick="act('jobs-submit-form')" style="background:var(--accent);font-size:12px;padding:10px 24px;border-radius:8px">Publish Job</button>
-        </div>
-      </div>
-    </div>`;
-  }
-  
-  // ── FILTER BAR ──
-  h += `<div style="display:flex;gap:10px;margin-bottom:24px;flex-wrap:wrap;align-items:center">
-    <input type="text" placeholder="Search jobs or companies..." value="${esc(S.jobsSearch)}" oninput="S.jobsSearch=this.value;renderJobsPage()" style="flex:1;min-width:200px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:10px;font-size:12.5px;font-family:inherit">
-    
-    <div style="display:flex;gap:10px;flex-wrap:wrap">
-      <!-- Role Type Filter -->
-      <select onchange="S.jobsFilterRole=this.value;renderJobsPage()" style="padding:6px 12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:11px;font-family:inherit">
-        <option value="all" ${S.jobsFilterRole==='all'?'selected':''}>All Roles</option>
-        <option value="ds" ${S.jobsFilterRole==='ds'?'selected':''}>Data Scientist</option>
-        <option value="mle" ${S.jobsFilterRole==='mle'?'selected':''}>ML Engineer</option>
-        <option value="quant" ${S.jobsFilterRole==='quant'?'selected':''}>Quant Analyst</option>
-        <option value="da" ${S.jobsFilterRole==='da'?'selected':''}>Data Analyst</option>
-      </select>
-      
-      <!-- Location Filter -->
-      <select onchange="S.jobsFilterLoc=this.value;renderJobsPage()" style="padding:6px 12px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;font-size:11px;font-family:inherit">
-        <option value="all" ${S.jobsFilterLoc==='all'?'selected':''}>All Locations</option>
-        <option value="india" ${S.jobsFilterLoc==='india'?'selected':''}>India</option>
-        <option value="remote" ${S.jobsFilterLoc==='remote'?'selected':''}>Remote</option>
-        <option value="global" ${S.jobsFilterLoc==='global'?'selected':''}>Global (US/Europe)</option>
-      </select>
-    </div>
-  </div>`;
-  
-  // ── JOBS GRID ──
-  if (filtered.length === 0) {
-    h += `<div style="text-align:center;padding:60px 20px;background:var(--surface);border:1px solid var(--border);border-radius:16px;color:var(--text3)">
-      <span style="font-size:32px">💼</span>
-      <div style="font-size:14px;font-weight:600;margin-top:12px;color:var(--text2)">No job postings match your criteria.</div>
-    </div>`;
-  } else {
-    h += `<div style="display:grid;grid-template-columns:repeat(auto-fill, minmax(320px, 1fr));gap:20px">
-      ${filtered.map(j => {
-        const roleLabel = j.roleType === 'quant' ? 'Quant' : j.roleType === 'mle' ? 'ML Engineer' : j.roleType === 'da' ? 'Data Analyst' : 'Data Scientist';
-        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:var(--shadow);display:flex;flex-direction:column;justify-content:space-between;transition:all 0.2s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
-          <div>
-            <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px">
-              <div>
-                <span style="background:var(--accent)10;color:var(--accent);font-size:8.5px;font-weight:800;padding:2px 8px;border-radius:6px;text-transform:uppercase;letter-spacing:0.5px">${roleLabel}</span>
-              </div>
-              <span style="font-size:11px;color:var(--green);font-weight:700">${esc(j.salary)}</span>
-            </div>
-            
-            <h4 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:15px;color:var(--text);margin-bottom:6px;line-height:1.3">${esc(j.title)}</h4>
-            <div style="font-size:11px;color:var(--text3);margin-bottom:12px">
-              <strong style="color:var(--text2)">${j.company}</strong> · ${esc(j.location)}
-            </div>
-            <p style="font-size:12.5px;color:var(--text2);line-height:1.6;margin-bottom:14px">${esc(j.description)}</p>
-            
-            <div style="background:var(--surface2);border-radius:8px;padding:10px 12px;margin-bottom:16px">
-              <strong style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px">Requirements:</strong>
-              <p style="font-size:11.5px;color:var(--text2);margin-top:4px;line-height:1.5">${esc(j.requirements)}</p>
-            </div>
-          </div>
-          
-          <div>
-            <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:16px">
-              ${(j.tags || []).map(t => `<span style="background:var(--surface2);color:var(--text3);font-size:9px;padding:2px 6px;border-radius:4px;font-weight:600">#${t}</span>`).join('')}
-            </div>
-            <a href="${j.link}" target="_blank" rel="noopener" style="display:block;text-align:center;background:var(--accent);color:#fff;text-decoration:none;font-size:11px;font-weight:700;padding:10px;border-radius:8px;transition:opacity 0.2s" onmouseover="this.style.opacity='0.9'" onmouseout="this.style.opacity='1'">Apply Externally ↗</a>
-          </div>
-        </div>`;
-      }).join('')}
-    </div>`;
-  }
-  
-  el.innerHTML = h;
-  bind();
-}
-
-function submitJobForm() {
-  const title = document.getElementById('job-title')?.value.trim();
-  const company = document.getElementById('job-comp')?.value.trim();
-  const location = document.getElementById('job-loc')?.value.trim();
-  const salary = document.getElementById('job-sal')?.value.trim();
-  const roleType = document.getElementById('job-role')?.value;
-  const desc = document.getElementById('job-desc')?.value.trim();
-  const req = document.getElementById('job-req')?.value.trim();
-  const link = document.getElementById('job-link')?.value.trim();
-  const tagsVal = document.getElementById('job-tags')?.value.trim();
-  
-  if (!title || !company || !location || !salary || !desc || !req || !link) {
-    alert('Please fill in all required job posting fields.');
-    return;
-  }
-  
-  const jobs = getJobsData();
-  const tags = tagsVal ? tagsVal.split(',').map(t => t.trim()) : [];
-  
-  const newJob = {
-    id: Date.now(),
-    title,
-    company,
-    location,
-    roleType,
-    salary,
-    description: desc,
-    requirements: req,
-    link,
-    tags
-  };
-  
-  jobs.push(newJob);
-  saveJobsData(jobs);
-  
-  S.jobsFormOpen = false;
-  renderJobsPage();
 }
 
 // ── 20. COMMUNITY FORUM SYSTEM ──
