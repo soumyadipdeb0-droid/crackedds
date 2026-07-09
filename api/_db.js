@@ -52,10 +52,42 @@ export async function initDatabase() {
     )
   `;
 
+  await sql`
+    CREATE TABLE IF NOT EXISTS events (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(500) NOT NULL,
+      description TEXT NOT NULL,
+      type VARCHAR(50) NOT NULL,
+      date DATE NOT NULL,
+      organizer VARCHAR(255) NOT NULL,
+      link VARCHAR(1000) NOT NULL,
+      tags VARCHAR(500) DEFAULT '',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  await sql`
+    CREATE TABLE IF NOT EXISTS jobs (
+      id SERIAL PRIMARY KEY,
+      title VARCHAR(500) NOT NULL,
+      company VARCHAR(255) NOT NULL,
+      location VARCHAR(255) NOT NULL,
+      role_type VARCHAR(50) NOT NULL,
+      salary VARCHAR(255) NOT NULL,
+      description TEXT NOT NULL,
+      requirements TEXT NOT NULL,
+      link VARCHAR(1000) NOT NULL,
+      tags VARCHAR(500) DEFAULT '',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
   // Create database indexes to optimize query speeds
   await sql`CREATE INDEX IF NOT EXISTS idx_progress_user_id ON progress(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id)`;
   await sql`CREATE INDEX IF NOT EXISTS idx_case_progress_user_id ON case_progress(user_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_events_date ON events(date)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at)`;
 }
 let dbInitialized = false;
 async function ensureDbInit() {
@@ -176,4 +208,154 @@ export async function saveCaseProgress(userId, caseId, score) {
       score = GREATEST(case_progress.score, ${score}),
       completed_at = CURRENT_TIMESTAMP
   `;
+}
+
+
+// Events operations
+export async function getEvents() {
+  await ensureDbInit();
+  const result = await sql`SELECT * FROM events ORDER BY date ASC`;
+  if (result.rows.length === 0) {
+    const defaultEvents = [
+      {
+        title: "Kaggle ARC Prize 2026 AGI Progress Challenge",
+        description: "Crack the Abstraction and Reasoning Corpus (ARC-AGI) benchmark testing fluid intelligence, general reasoning, and visual learning capabilities for a $1,000,000 prize pool.",
+        type: "hackathon",
+        date: "2026-10-15",
+        organizer: "ARC Prize Foundation & Kaggle",
+        link: "https://arcprize.org",
+        tags: "AGI, Reasoning, Kaggle"
+      },
+      {
+        title: "Kaggle Pokemon TCG AI Battle Challenge",
+        description: "Build simulation agents and optimize deep reinforcement learning strategies for Pokemon Trading Card Game play in this active $240,000 global competition.",
+        type: "hackathon",
+        date: "2026-09-30",
+        organizer: "The Pokémon Company & Kaggle",
+        link: "https://www.kaggle.com/competitions",
+        tags: "RL, Agents, Kaggle"
+      },
+      {
+        title: "ACM SIGKDD 2026 Conference on Knowledge Discovery & Data Mining",
+        description: "The premier international conference presenting scientific research in data mining, statistics, big data architectures, and large-scale predictive models in Jeju, South Korea.",
+        type: "conference",
+        date: "2026-08-09",
+        organizer: "SIGKDD Org",
+        link: "https://kdd.org",
+        tags: "Data Science, Research, KDD"
+      },
+      {
+        title: "NeurIPS 2026: Neural Information Processing Systems Conference",
+        description: "The largest global artificial intelligence conference covering deep neural networks, transformer math, reinforcement learning breakthroughs, and generative AI research in Sydney, Australia.",
+        type: "conference",
+        date: "2026-12-06",
+        organizer: "NeurIPS Foundation",
+        link: "https://neurips.cc",
+        tags: "Deep Learning, Research, Sydney"
+      },
+      {
+        title: "D. E. Shaw Quantitative Research Recruitment Drive 2026",
+        description: "Application window opens for Quantitative Analyst, Quantitative Researcher, and Machine Learning Researcher roles globally. Track details on their official LinkedIn corporate board.",
+        type: "webinar",
+        date: "2026-09-01",
+        organizer: "D. E. Shaw & Co.",
+        link: "https://www.linkedin.com/company/d-e-shaw-group/",
+        tags: "Quant Research, DE Shaw, Careers"
+      }
+    ];
+
+    for (const e of defaultEvents) {
+      await sql`
+        INSERT INTO events (title, description, type, date, organizer, link, tags)
+        VALUES (${e.title}, ${e.description}, ${e.type}, ${e.date}, ${e.organizer}, ${e.link}, ${e.tags})
+      `;
+    }
+    const fresh = await sql`SELECT * FROM events ORDER BY date ASC`;
+    return fresh.rows;
+  }
+  return result.rows;
+}
+
+export async function createEvent({ title, description, type, date, organizer, link, tags }) {
+  await ensureDbInit();
+  const result = await sql`
+    INSERT INTO events (title, description, type, date, organizer, link, tags)
+    VALUES (${title}, ${description}, ${type}, ${date}, ${organizer}, ${link}, ${tags})
+    RETURNING *
+  `;
+  return result.rows[0];
+}
+
+// Jobs operations
+export async function getJobs() {
+  await ensureDbInit();
+  const result = await sql`SELECT * FROM jobs ORDER BY created_at DESC`;
+  if (result.rows.length === 0) {
+    const defaultJobs = [
+      {
+        title: "Quantitative Research Analyst - Financial Research Group",
+        company: "D. E. Shaw India",
+        location: "Hyderabad, India",
+        role_type: "quant",
+        salary: "Competitive Base + Performance Bonus",
+        description: "Build mathematical models, analyze financial data streams, and design trading pipelines using probability, statistics, and high-performance Python/C++ scripts.",
+        requirements: "Strong background in mathematics, statistics, physics, or computer science from top-tier institutions. Proficiency in Python and statistical packages.",
+        link: "https://www.linkedin.com/company/d-e-shaw-group/jobs/",
+        tags: "Quant, Finance, Python"
+      },
+      {
+        title: "Senior Data Scientist - Membership Growth Strategy",
+        company: "Walmart Global Tech",
+        location: "Bengaluru, India",
+        role_type: "ds",
+        salary: "Competitive LPA (Industry Leading)",
+        description: "Optimize subscriber growth strategy and member retention for Walmart+ programs. Analyze transactional logs, design high-scale predictive ML models, and write advanced data pipelines.",
+        requirements: "Proficiency in Python, SQL, Statistics, and regression modeling. Familiarity with big data stacks (Spark, BigQuery, Snowflake).",
+        link: "https://careers.walmart.com",
+        tags: "Forecasting, ML, SQL"
+      },
+      {
+        title: "Research Scientist - Artificial General Intelligence",
+        company: "Google DeepMind",
+        location: "London, UK (Hybrid)",
+        role_type: "mle",
+        salary: "£120,000 - £180,000",
+        description: "Conduct research on neural network architectures, fluid reasoning, multi-step agent security, and transformer optimization.",
+        requirements: "PhD in ML/DL with publications in top venues (NeurIPS, ICML, CVPR). Advanced PyTorch skills.",
+        link: "https://careers.google.com",
+        tags: "RL, AGI, PyTorch"
+      },
+      {
+        title: "Product Data Scientist - Causal Inference & Experimentation",
+        company: "Meta",
+        location: "Menlo Park, CA",
+        role_type: "ds",
+        salary: "$185,000 - $245,000",
+        description: "Design complex A/B testing frameworks, build causal inference models (synthetic controls, selection bias adjustments), and define core metrics for social features.",
+        requirements: "MS/PhD in Statistics or quantitative field. Strong SQL query capabilities and experiment design.",
+        link: "https://careers.meta.com",
+        tags: "Causal, AB Testing, SQL"
+      }
+    ];
+
+    for (const j of defaultJobs) {
+      await sql`
+        INSERT INTO jobs (title, company, location, role_type, salary, description, requirements, link, tags)
+        VALUES (${j.title}, ${j.company}, ${j.location}, ${j.role_type}, ${j.salary}, ${j.description}, ${j.requirements}, ${j.link}, ${j.tags})
+      `;
+    }
+    const fresh = await sql`SELECT * FROM jobs ORDER BY created_at DESC`;
+    return fresh.rows;
+  }
+  return result.rows;
+}
+
+export async function createJob({ title, company, location, roleType, salary, description, requirements, link, tags }) {
+  await ensureDbInit();
+  const result = await sql`
+    INSERT INTO jobs (title, company, location, role_type, salary, description, requirements, link, tags)
+    VALUES (${title}, ${company}, ${location}, ${roleType}, ${salary}, ${description}, ${requirements}, ${link}, ${tags})
+    RETURNING *
+  `;
+  return result.rows[0];
 }
