@@ -549,6 +549,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
     <div class="nav-tabs">
       <button class="nav-tab active" data-page="practice" onclick="switchPage('practice')">Practice</button>
 <button class="nav-tab" data-page="mock" onclick="switchPage('mock')">🎙️ Mock Interview</button>
+<button class="nav-tab" data-page="forum" onclick="switchPage('forum')">💬 Forum</button>
       <button class="nav-tab" data-page="cases" onclick="switchPage('cases')">Case Studies</button>
       <button class="nav-tab" data-page="learn" onclick="switchPage('learn')">Learn</button>
       <button class="nav-tab" data-page="resources" onclick="switchPage('resources')">Resources</button>
@@ -591,6 +592,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 <!-- ═══ PAGE: LEARN ═══ -->
 <div class="container learn-page hidden" id="learn-page" style="max-width:760px"></div>
 <div class="container mock-page hidden" id="mock-page" style="max-width:700px"></div>
+<div class="container forum-page hidden" id="forum-page" style="max-width:760px"></div>
 
 <!-- ═══ PAGE: RESOURCES ═══ -->
 <div class="container resources-page hidden" id="resources-page" style="max-width:760px"></div>
@@ -1688,6 +1690,10 @@ tools:[
 
 
 let S = {
+  forumActivePostId:null,
+  newPostTitle:'',
+  newPostContent:'',
+  newCommentContent:'',
   mockActive:false,
   mockMessages:[],
   mockInput:'',
@@ -2305,6 +2311,18 @@ function act(a,d){
       if(S.isListening)stopListening();
       else startListening();
       break;
+    case'forum-create-post':
+      createForumPost();
+      break;
+    case'forum-add-comment':
+      addForumComment();
+      break;
+    case'forum-upvote-post':
+      upvoteForumPost(args.postId);
+      break;
+    case'forum-upvote-comment':
+      upvoteForumComment(args.postId, args.commentId);
+      break;
     case'ai-close':S.showAI=false;window.speechSynthesis.cancel();stopListening();break;
     case'ai-start':startAI();return;
     case'ai-send':sendAI();return;
@@ -2598,6 +2616,7 @@ function switchPage(page){
   document.getElementById('learn-page').classList.toggle('hidden',page!=='learn');
   document.getElementById('resources-page').classList.toggle('hidden',page!=='resources');
   document.getElementById('mock-page').classList.toggle('hidden',page!=='mock');
+  document.getElementById('forum-page').classList.toggle('hidden',page!=='forum');
   // Update nav tabs
   document.querySelectorAll('.nav-tab').forEach(function(btn){
     btn.classList.toggle('active',btn.dataset.page===page);
@@ -2608,6 +2627,7 @@ function switchPage(page){
   if(page==='resources') renderResourcesPage();
   if(page==='practice') render();
   if(page==='mock') renderFullMockPage();
+  if(page==='forum') renderForumPage();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -3247,6 +3267,306 @@ function exportCheatSheet() {
   html += '<script>window.onload = function() { window.print(); };</s' + 'cript></body></html>';
   win.document.write(html);
   win.document.close();
+}
+
+// ── 20. COMMUNITY FORUM SYSTEM ──
+function getForumData() {
+  const defaultPosts = [
+    {
+      id: 1,
+      title: "How to prepare for DE Shaw's technical round?",
+      content: "I have a technical screen scheduled with DE Shaw in two weeks. What are the key areas to focus on in probability and linear regression?",
+      author: "Soumyadip",
+      authorEmail: "soumyadipdeb0@gmail.com",
+      createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString(), // 3 days ago
+      upvotes: 12,
+      upvotedBy: [],
+      comments: [
+        {
+          id: 1,
+          content: "Focus on Bayes' theorem, conditional expectation, and covariance derivations. For ML, understand the math behind OLS estimator.",
+          author: "Rajesh",
+          createdAt: new Date(Date.now() - 3600000 * 24 * 2.5).toISOString(),
+          upvotes: 5,
+          upvotedBy: []
+        }
+      ]
+    },
+    {
+      id: 2,
+      title: "Walmart Global Tech - Data Science Case Study Walkthrough",
+      content: "Sharing my experience working through Walmart's supply chain optimization case study. Key areas they assessed were demand forecasting metrics and A/B test power analysis.",
+      author: "Ananya",
+      authorEmail: "ananya@example.com",
+      createdAt: new Date(Date.now() - 3600000 * 24 * 5).toISOString(),
+      upvotes: 24,
+      upvotedBy: [],
+      comments: []
+    }
+  ];
+  
+  const saved = localStorage.getItem('ck_forum_posts');
+  if (!saved) {
+    localStorage.setItem('ck_forum_posts', JSON.stringify(defaultPosts));
+    return defaultPosts;
+  }
+  return JSON.parse(saved);
+}
+
+function saveForumData(posts) {
+  localStorage.setItem('ck_forum_posts', JSON.stringify(posts));
+}
+
+function getUserKarma(email) {
+  const posts = getForumData();
+  let karma = 10; // Base score
+  posts.forEach(p => {
+    if (p.authorEmail === email) {
+      karma += (p.upvotes || 0) * 5;
+    }
+    p.comments.forEach(c => {
+      if (c.authorEmail === email) {
+        karma += (c.upvotes || 0) * 2;
+      }
+    });
+  });
+  return karma;
+}
+
+function renderForumPage() {
+  const el = document.getElementById('forum-page');
+  if (!el) return;
+  
+  const posts = getForumData();
+  const user = currentUser || { name: 'Anonymous', email: 'guest@example.com' };
+  const userKarmaScore = getUserKarma(user.email);
+  
+  let h = `<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:12px">
+    <div class="learn-hero" style="margin-bottom:0">
+      <h2 style="font-family:'Outfit',sans-serif">💬 Community Discussion Forum</h2>
+      <p>Share interview experiences and earn Karma points</p>
+    </div>
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:8px 16px;display:flex;align-items:center;gap:8px">
+      <span style="font-size:20px">🏆</span>
+      <div>
+        <div style="font-size:10px;color:var(--text3);text-transform:uppercase;font-weight:700">Your Karma</div>
+        <div style="font-family:'Outfit',sans-serif;font-weight:600;color:var(--accent)">${userKarmaScore} Points</div>
+      </div>
+    </div>
+  </div>`;
+  
+  if (S.forumActivePostId !== null) {
+    // ── POST DETAIL VIEW ──
+    const post = posts.find(p => p.id === S.forumActivePostId);
+    if (!post) {
+      S.forumActivePostId = null;
+      renderForumPage();
+      return;
+    }
+    
+    const postKarma = getUserKarma(post.authorEmail);
+    const hasUpvoted = post.upvotedBy && post.upvotedBy.includes(user.email);
+    
+    h += `<button class="reset-btn" onclick="S.forumActivePostId=null;renderForumPage()" style="margin-bottom:20px;padding:8px 16px">← Back to Discussions</button>`;
+    
+    h += `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:24px;margin-bottom:24px;box-shadow:var(--shadow)">
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+          <button onclick="act('forum-upvote-post', {postId: ${post.id}})" style="background:none;border:none;cursor:pointer;font-size:20px;color:${hasUpvoted?'var(--accent)':'var(--text3)'};transition:transform 0.1s" onmouseover="this.style.transform='scale(1.2)'" onmouseout="this.style.transform='scale(1)'">▲</button>
+          <span style="font-family:'Outfit',sans-serif;font-weight:600;font-size:14px;color:var(--text)">${post.upvotes}</span>
+        </div>
+        <div style="flex:1">
+          <h3 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:18px;color:var(--text);margin-bottom:8px">${esc(post.title)}</h3>
+          <div style="font-size:11px;color:var(--text3);margin-bottom:16px">
+            Posted by <strong style="color:var(--text2)">${esc(post.author)}</strong> (${postKarma} Karma) • ${new Date(post.createdAt).toLocaleDateString()}
+          </div>
+          <p style="white-space:pre-wrap;line-height:1.7;color:var(--text2);font-size:13.5px">${esc(post.content)}</p>
+        </div>
+      </div>
+    </div>`;
+    
+    // Comments Section
+    h += `<div style="margin-bottom:24px">
+      <h4 style="font-family:'Outfit',sans-serif;font-weight:600;margin-bottom:16px;color:var(--text)">Comments (${post.comments.length})</h4>
+      ${post.comments.map(c => {
+        const cKarma = getUserKarma(c.authorEmail || 'guest@example.com');
+        const cHasUpvoted = c.upvotedBy && c.upvotedBy.includes(user.email);
+        return `<div style="background:var(--surface2);border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:12px;display:flex;gap:12px">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+            <button onclick="act('forum-upvote-comment', {postId: ${post.id}, commentId: ${c.id}})" style="background:none;border:none;cursor:pointer;font-size:14px;color:${cHasUpvoted?'var(--accent)':'var(--text3)'}">▲</button>
+            <span style="font-size:11px;font-weight:600">${c.upvotes || 0}</span>
+          </div>
+          <div style="flex:1">
+            <div style="font-size:10.5px;color:var(--text3);margin-bottom:6px">
+              <strong style="color:var(--text2)">${esc(c.author)}</strong> (${cKarma} Karma) • ${new Date(c.createdAt).toLocaleDateString()}
+            </div>
+            <p style="font-size:12.5px;color:var(--text);line-height:1.5;white-space:pre-wrap">${esc(c.content)}</p>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>`;
+    
+    // Add comment input
+    h += `<div style="background:var(--surface);border:1.5px dashed var(--border);border-radius:16px;padding:20px">
+      <h5 style="font-family:'Outfit',sans-serif;font-weight:600;margin-bottom:12px;color:var(--text)">Add a Comment</h5>
+      <textarea id="forum-comment-text" class="ai-input" placeholder="Type your helpful comment here..." style="width:100%;height:80px;resize:vertical;margin-bottom:12px;padding:12px" oninput="S.newCommentContent=this.value">${esc(S.newCommentContent)}</textarea>
+      <button class="start-btn" onclick="act('forum-add-comment')" style="background:var(--accent);font-size:12px;padding:8px 20px;border-radius:8px">Post Comment</button>
+    </div>`;
+    
+  } else {
+    // ── DISCUSSIONS LIST VIEW ──
+    h += `<div style="background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:24px;margin-bottom:28px">
+      <h4 style="font-family:'Outfit',sans-serif;font-weight:600;margin-bottom:14px;color:var(--text)">Create a New Post</h4>
+      <input type="text" id="forum-post-title" class="ai-input" placeholder="Post Title (e.g. Google DS interview experience)" style="width:100%;margin-bottom:12px;padding:10px" value="${esc(S.newPostTitle)}" oninput="S.newPostTitle=this.value">
+      <textarea id="forum-post-content" class="ai-input" placeholder="What\'s on your mind? Share topics, question logs, or experience details..." style="width:100%;height:100px;resize:vertical;margin-bottom:16px;padding:12px" oninput="S.newPostContent=this.value">	ext(S.newPostContent)</textarea>
+      <button class="start-btn" onclick="act('forum-create-post')" style="background:var(--accent);font-size:13px;padding:10px 24px;border-radius:10px">Publish Post</button>
+    </div>`;
+    
+    h += `<div style="margin-bottom:12px"><h4 style="font-family:'Outfit',sans-serif;font-weight:600;color:var(--text)">Discussions</h4></div>`;
+    
+    if (posts.length === 0) {
+      h += `<div style="text-align:center;padding:40px;color:var(--text3)">No discussions yet. Be the first to post!</div>`;
+    } else {
+      h += posts.map(p => {
+        const pKarma = getUserKarma(p.authorEmail);
+        const hasUpvoted = p.upvotedBy && p.upvotedBy.includes(user.email);
+        const excerpt = p.content.length > 140 ? p.content.substring(0, 140) + '...' : p.content;
+        
+        return `<div style="background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;gap:16px;align-items:flex-start">
+          <div style="display:flex;flex-direction:column;align-items:center;gap:4px">
+            <button onclick="act('forum-upvote-post', {postId: ${p.id}})" style="background:none;border:none;cursor:pointer;font-size:18px;color:${hasUpvoted?'var(--accent)':'var(--text3)'}">▲</button>
+            <span style="font-family:'Outfit',sans-serif;font-weight:600;font-size:13px;color:var(--text)">${p.upvotes}</span>
+          </div>
+          <div style="flex:1">
+            <h4 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:15px;color:var(--accent);cursor:pointer;margin-bottom:6px" onclick="S.forumActivePostId=${p.id};renderForumPage()">${esc(p.title)}</h4>
+            <p style="font-size:12.5px;color:var(--text2);margin-bottom:12px;line-height:1.5">	ext(excerpt)</p>
+            <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--text3)">
+              <div>
+                Posted by <strong style="color:var(--text2)">${esc(p.author)}</strong> (s{pKarma} Karma) • ${new Date(p.createdAt).toLocaleDateString()}
+              </div>
+              <div style="font-weight:600;color:var(--accent);cursor:pointer" onclick="S.forumActivePostId=${p.id};renderForumPage()">
+                💬 ${p.comments.length} comments
+              </div>
+            </div>
+          </div>
+        </div>`;
+      }).join('');
+    }
+  }
+  bind();
+}
+
+function createForumPost() {
+  if (!S.newPostTitle.trim() || !S.newPostContent.trim()) {
+    alert('Please enter both a title and content for your post.');
+    return;
+  }
+  
+  const posts = getForumData();
+  const user = currentUser || { name: 'Anonymous', email: 'guest@example.com' };
+  
+  const newPost = {
+    id: Date.now(),
+    title: S.newPostTitle.trim(),
+    content: S.newPostContent.trim(),
+    author: user.name,
+    authorEmail: user.email,
+    createdAt: new Date().toISOString(),
+    upvotes: 1,
+    upvotedBy: [user.email],
+    comments: []
+  };
+  
+  posts.unshift(newPost);
+  saveForumData(posts);
+  
+  S.newPostTitle = '';
+  S.newPostContent = '';
+  
+  // Clear HTML text fields directly
+  const titleEl = document.getElementById('forum-post-title');
+  const contEl = document.getElementById('forum-post-content');
+  if (titleEl) titleEl.value = '';
+  if (contEl) contEl.value = '';
+  
+  renderForumPage();
+}
+
+function addForumComment() {
+  if (!S.newCommentContent.trim()) {
+    alert('Comment content cannot be empty.');
+    return;
+  }
+  
+  const posts = getForumData();
+  const post = posts.find(p => p.id === S.forumActivePostId);
+  if (!post) return;
+  
+  const user = currentUser || { name: 'Anonymous', email: 'guest@example.com' };
+  
+  const newComment = {
+    id: Date.now(),
+    content: S.newCommentContent.trim(),
+    author: user.name,
+    authorEmail: user.email,
+    createdAt: new Date().toISOString(),
+    upvotes: 0,
+    upvotedBy: []
+  };
+  
+  post.comments.push(newComment);
+  saveForumData(posts);
+  
+  S.newCommentContent = '';
+  const commentEl = document.getElementById('forum-comment-text');
+  if (commentEl) commentEl.value = '';
+  
+  renderForumPage();
+}
+
+function upvoteForumPost(postId) {
+  const posts = getForumData();
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  
+  const user = currentUser || { name: 'Anonymous', email: 'guest@example.com' };
+  if (!post.upvotedBy) post.upvotedBy = [];
+  
+  if (post.upvotedBy.includes(user.email)) {
+    // Undo upvote
+    post.upvotes = Math.max(0, post.upvotes - 1);
+    post.upvotedBy = post.upvotedBy.filter(e => e !== user.email);
+  } else {
+    // Upvote
+    post.upvotes += 1;
+    post.upvotedBy.push(user.email);
+  }
+  
+  saveForumData(posts);
+  renderForumPage();
+}
+
+function upvoteForumComment(postId, commentId) {
+  const posts = getForumData();
+  const post = posts.find(p => p.id === postId);
+  if (!post) return;
+  
+  const comment = post.comments.find(c => c.id === commentId);
+  if (!comment) return;
+  
+  const user = currentUser || { name: 'Anonymous', email: 'guest@example.com' };
+  if (!comment.upvotedBy) comment.upvotedBy = [];
+  
+  if (comment.upvotedBy.includes(user.email)) {
+    comment.upvotes = Math.max(0, comment.upvotes - 1);
+    comment.upvotedBy = comment.upvotedBy.filter(e => e !== user.email);
+  } else {
+    comment.upvotes += 1;
+    comment.upvotedBy.push(user.email);
+  }
+  
+  saveForumData(posts);
+  renderForumPage();
 }
 
 function exportMockReport() {
