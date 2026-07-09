@@ -1895,7 +1895,7 @@ function renderHome(){
 
   return`
   <header class="header fade-up" style="flex-wrap:wrap;gap:16px;padding-bottom:28px">
-    <div class="logo-mark" style="background:var(--accent)">DS</div>
+    <img class="logo-mark" src="profile.jpg" style="object-fit:cover;border-radius:10px" onerror="this.outerHTML='<div class=&quot;logo-mark&quot; style=&quot;background:var(--accent)&quot;>DS</div>'">
     <div style="flex:1;min-width:250px">
       <h1 style="font-family:'Outfit',sans-serif;font-weight:500">Data Science <strong>Interview Prep</strong></h1>
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px">
