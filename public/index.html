@@ -2389,82 +2389,97 @@ let recognition = null;
 function startListening(){
   const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
   if (!SpeechRec) {
-    alert("Speech recognition is not supported in this browser. Please use Google Chrome or Safari.");
+    alert("Speech recognition is not supported in this browser. Please use Google Chrome, Edge, or Safari.");
     S.isListening = false;
     if (currentPage === 'mock') renderFullMockPage(); else render();
     return;
   }
-  recognition = new SpeechRec();
-  recognition.continuous = true;
-  recognition.interimResults = true;
-  recognition.lang = 'en-US';
-  
-  recognition.onstart = () => {
-    S.isListening = true;
-    if (currentPage === 'mock') renderFullMockPage(); else render();
-  };
-  
-  recognition.onresult = (e) => {
-    let finalTranscript = '';
-    let interimTranscript = '';
-    
-    for (let i = e.resultIndex; i < e.results.length; ++i) {
-      if (e.results[i].isFinal) {
-        finalTranscript += e.results[i][0].transcript + ' ';
-      } else {
-        interimTranscript += e.results[i][0].transcript;
-      }
-    }
-    
-    if (currentPage === 'mock') {
-      const inp = document.getElementById('mock-text');
-      const cumulated = (S.mockInput + ' ' + finalTranscript).trim();
-      if (inp) {
-        inp.value = cumulated + (interimTranscript ? ' ' + interimTranscript : '');
-      }
-      if (finalTranscript) {
-        S.mockInput = cumulated;
-      }
-    } else {
-      const inp = document.getElementById('or-key-input'); // or key input
-      const cumulated = (S.aiInput + ' ' + finalTranscript).trim();
-      if (inp) {
-        inp.value = cumulated + (interimTranscript ? ' ' + interimTranscript : '');
-      }
-      if (finalTranscript) {
-        S.aiInput = cumulated;
-      }
-    }
-  };
-  
-  recognition.onerror = (e) => {
-    console.error('Speech recognition error:', e.error, e);
-    S.isListening = false;
-    
-    let msg = '';
-    if (e.error === 'not-allowed') {
-      msg = 'Microphone access blocked! Please click the Lock/Mic icon in your browser URL bar and change the Microphone permission to "Allow".';
-    } else if (e.error === 'audio-capture') {
-      msg = 'No microphone detected. Please plug in a working microphone and try again.';
-    } else if (e.error !== 'no-speech') {
-      msg = 'Speech recognition error: ' + e.error;
-    }
-    
-    if (msg) {
-      alert(msg);
-    }
-    if (currentPage === 'mock') renderFullMockPage(); else render();
-  };
-  
-  recognition.onend = () => {
-    S.isListening = false;
-    if (currentPage === 'mock') renderFullMockPage(); else render();
-  };
-  
+
+  // 1. Abort any previous instance first to prevent concurrent locks
   try {
+    if (typeof recognition !== 'undefined' && recognition) {
+      recognition.abort();
+    }
+  } catch(e) {
+    console.warn('Abort error:', e);
+  }
+
+  try {
+    recognition = new SpeechRec();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+    
+    recognition.onstart = () => {
+      console.log('Speech recognition started successfully.');
+      S.isListening = true;
+      if (currentPage === 'mock') renderFullMockPage(); else render();
+    };
+    
+    recognition.onresult = (e) => {
+      let finalTranscript = '';
+      let interimTranscript = '';
+      
+      for (let i = e.resultIndex; i < e.results.length; ++i) {
+        if (e.results[i].isFinal) {
+          finalTranscript += e.results[i][0].transcript + ' ';
+        } else {
+          interimTranscript += e.results[i][0].transcript;
+        }
+      }
+      
+      if (currentPage === 'mock') {
+        const inp = document.getElementById('mock-text');
+        const cumulated = (S.mockInput + ' ' + finalTranscript).trim();
+        if (inp) {
+          inp.value = cumulated + (interimTranscript ? ' ' + interimTranscript : '');
+        }
+        if (finalTranscript) {
+          S.mockInput = cumulated;
+        }
+      } else {
+        const inp = document.getElementById('or-key-input');
+        const cumulated = (S.aiInput + ' ' + finalTranscript).trim();
+        if (inp) {
+          inp.value = cumulated + (interimTranscript ? ' ' + interimTranscript : '');
+        }
+        if (finalTranscript) {
+          S.aiInput = cumulated;
+        }
+      }
+    };
+    
+    recognition.onerror = (e) => {
+      console.error('Speech recognition error callback:', e.error, e);
+      S.isListening = false;
+      
+      let msg = '';
+      if (e.error === 'not-allowed') {
+        msg = 'Microphone access blocked!\n\n1. Please click the Lock/Mic icon in your browser URL bar and set Microphone to "Allow".\n2. If you are using Brave Browser, go to brave://settings/shields and enable Google Services for Speech.';
+      } else if (e.error === 'audio-capture') {
+        msg = 'No working microphone detected. Please plug in a microphone and try again.';
+      } else if (e.error !== 'no-speech') {
+        msg = 'Speech recognition failed with error: ' + e.error;
+      }
+      
+      if (msg) {
+        alert(msg);
+      }
+      if (currentPage === 'mock') renderFullMockPage(); else render();
+    };
+    
+    recognition.onend = () => {
+      console.log('Speech recognition ended.');
+      S.isListening = false;
+      if (currentPage === 'mock') renderFullMockPage(); else render();
+    };
+    
     recognition.start();
   } catch(err) {
-    console.error('Failed to start speech recognition:', err);
+    console.error('Synchronous speech recognition start error:', err);
+    alert('Failed to start microphone: ' + err.message + '\n\nNote: Speech recognition requires HTTPS or localhost/127.0.0.1 origins.');
+    S.isListening = false;
+    if (currentPage === 'mock') renderFullMockPage(); else render();
   }
 }
 function stopListening(){
