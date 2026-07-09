@@ -1915,7 +1915,7 @@ function renderHome(){
       </div>
     </div>
     <div class="streak">🔥 ${S.streak}</div>
-  </header>`;
+  </header>
 
   ${(function(){
     var dc=getDailyChallenge();
@@ -2923,7 +2923,24 @@ function handleLocalMockApi(endpoint, options) {
   return { success: true };
 }
 
-// Duplicate api definition removed to allow clean override at line 3329
+async function api(endpoint, options = {}) {
+  var token = localStorage.getItem('crackedds_token');
+  var headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = 'Bearer ' + token;
+  
+  try {
+    var res = await fetch(API_BASE + endpoint, {
+      ...options,
+      headers: { ...headers, ...options.headers }
+    });
+    var data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Request failed');
+    return data;
+  } catch (e) {
+    console.warn('API fetch failed, falling back to local database mock:', e);
+    return handleLocalMockApi(endpoint, options);
+  }
+}
 
 // ── 14. COMPREHENSIVE MOCK INTERVIEW ENGINE ──
 function renderFullMockPage(){
@@ -3060,22 +3077,18 @@ async function startFullMock(){
   S.mockQuestions = selected;
 
   var roleLabel = S.mockRole === 'ds' ? 'Data Scientist' : S.mockRole === 'mle' ? 'ML Engineer' : 'Data Analyst';
-  var prompt = `You are a senior technical interviewer at a top-tier tech firm conducting a mock interview loop for a ${roleLabel} candidate.
-You have selected ${selected.length} questions to assess the candidate's skills.
-
-Here is the exact sequence of questions and their reference grading rubrics:
-${selected.map((q, idx) => `QUESTION ${idx+1} [Topic: ${q.topicName}]:
-Question: "${q.q}"
-Correct Answer Reference: "${q.a}"`).join('\n\n')}
-
-FLOW PROTOCOL:
-1. Welcome candidate and ask QUESTION 1 directly. Do not list other questions.
-2. When candidate responds, grade it, give score out of 10, explain strengths/gaps, state "Moving to the next question...", and ask next question.
-3. Once all questions are answered, compile final COMPREHENSIVE LOOP REPORT.
-
-CRITICAL RULES:
-- NEVER append "(Wait for response)" or similar placeholders. Ask the question and stop writing immediately.
-- Keep all responses short and direct (under 120 words) to minimize latency.`;
+  var prompt = 'You are a senior technical interviewer at a top-tier tech firm conducting a mock interview loop for a ' + roleLabel + ' candidate.\n' +
+    'You have selected ' + selected.length + ' questions to assess the candidate.\n\n' +
+    selected.map((q, idx) => 'QUESTION ' + (idx+1) + ' [Topic: ' + q.topicName + ']:\nQuestion: "' + q.q + '"\nReference: "' + q.a + '"').join('\n\n') +
+    '\n\nFLOW PROTOCOL:\n' +
+    '1. Welcome candidate and ask QUESTION 1 directly. Do not ask or mention other questions yet.\n' +
+    '2. When candidate responds, grade their answer against reference, give score out of 10, explain strengths/gaps, state "Moving to the next question...", and ask the next question.\n' +
+    '3. Repeat until all ' + selected.length + ' questions are answered.\n' +
+    '4. After the final question, grade it and output the final COMPREHENSIVE LOOP REPORT.\n\n' +
+    'CRITICAL RULES:\n' +
+    '- NEVER append "(Wait for response)" or similar placeholder comments to your responses.\n' +
+    '- State your welcome and QUESTION 1 directly and stop writing immediately.\n' +
+    '- Keep all responses short and direct (under 120 words) to minimize response latency.';
 
   try {
     const reply = await fetchAICompletions([
@@ -3105,18 +3118,17 @@ async function sendFullMock(){
   renderFullMockPage();
 
   var roleLabel = S.mockRole === 'ds' ? 'Data Scientist' : S.mockRole === 'mle' ? 'ML Engineer' : 'Data Analyst';
-  var prompt = `You are a senior technical interviewer at a top-tier tech firm conducting a mock interview loop for a ${roleLabel} candidate.
-Here are the selected questions:
-${S.mockQuestions.map((q, idx) => `QUESTION ${idx+1}: "${q.q}"\nReference: "${q.a}"`).join('\n\n')}
-
-Continue following the flow protocol:
-- Grade candidate's last answer.
-- Ask the next question.
-- If all questions are answered, compile and output the final COMPREHENSIVE LOOP REPORT.
-
-CRITICAL RULES:
-- NEVER append "(Wait for response)" or similar placeholders. Ask the question and stop writing immediately.
-- Keep all responses short and direct (under 120 words) to minimize latency.`;
+  var prompt = 'You are a senior technical interviewer at a top-tier tech firm conducting a mock interview loop for a ' + roleLabel + ' candidate.\n\n' +
+    'Selected Questions:\n' +
+    S.mockQuestions.map((q, idx) => 'QUESTION ' + (idx+1) + ': "' + q.q + '"\nReference: "' + q.a + '"').join('\n\n') +
+    '\n\nFLOW PROTOCOL:\n' +
+    '- Grade the candidate\'s last response against the correct reference answer.\n' +
+    '- Move to and ask the next question in the sequence.\n' +
+    '- If all questions are answered, output the final COMPREHENSIVE LOOP REPORT.\n\n' +
+    'CRITICAL RULES:\n' +
+    '- NEVER append "(Wait for response)" or similar placeholders to your output.\n' +
+    '- Grade the previous response, ask the next question, and stop writing immediately.\n' +
+    '- Keep responses under 120 words to minimize latency.';
 
   try {
     const reply = await fetchAICompletions([
@@ -3336,18 +3348,13 @@ async function api(endpoint, options = {}) {
   var headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = 'Bearer ' + token;
   
-  try {
-    var res = await fetch(API_BASE + endpoint, {
-      ...options,
-      headers: { ...headers, ...options.headers }
-    });
-    var data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
-    return data;
-  } catch (e) {
-    console.warn('API fetch failed, falling back to local database mock:', e);
-    return handleLocalMockApi(endpoint, options);
-  }
+  var res = await fetch(API_BASE + endpoint, {
+    ...options,
+    headers: { ...headers, ...options.headers }
+  });
+  var data = await res.json();
+  if (!res.ok) throw new Error(data.error || 'Request failed');
+  return data;
 }
 
 // Auth modal controls
