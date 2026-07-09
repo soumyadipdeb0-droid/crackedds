@@ -32,7 +32,7 @@ const GOOGLE_CLIENT_ID = '95217093752-jgqimpb7carlontmig73jquu5jrgiiia.apps.goog
 body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.6}
 ::selection{background:rgba(26,115,232,.12)}
 ::-webkit-scrollbar{width:7px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#D4D1C9;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#B8B4AB}
-.container{max-width:900px;margin:0 auto;padding:48px 32px 100px;position:relative}
+.container{max-width:100% !important;margin:0 !important;padding:24px 40px 100px !important;position:relative;box-sizing:border-box}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 .fade-up{animation:enter .4s ease both}
 .s1{animation-delay:.05s}.s2{animation-delay:.1s}.s3{animation-delay:.15s}.s4{animation-delay:.2s}.s5{animation-delay:.25s}.s6{animation-delay:.3s}.s7{animation-delay:.35s}
@@ -245,7 +245,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 }
 /* ── Top Nav ── */
 .top-nav{position:sticky;top:0;z-index:100;background:rgba(250,250,248,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:0 24px}
-.nav-inner{max-width:900px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;height:52px}
+.nav-inner{max-width:100% !important;padding:0 16px !important;margin:0 !important;display:flex;align-items:center;justify-content:space-between;height:52px}
 .nav-brand{font:600 17px/1 'Newsreader',serif;color:var(--text);display:flex;align-items:center;gap:8px}
 .nav-logo{color:var(--accent);font-size:18px}
 .nav-tabs{display:flex;gap:2px}
@@ -571,7 +571,7 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 <div class="container" id="app"></div>
 
 <!-- ═══ PAGE: CASE STUDIES ═══ -->
-<div class="container cases-page hidden" id="cases-page" style="max-width:680px">
+<div class="container cases-page hidden" id="cases-page">
   <div id="cases-home">
     <div class="cases-header">
       <div class="cases-eyebrow">Interactive Guided Journeys</div>
@@ -592,14 +592,14 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 </div>
 
 <!-- ═══ PAGE: LEARN ═══ -->
-<div class="container learn-page hidden" id="learn-page" style="max-width:760px"></div>
-<div class="container mock-page hidden" id="mock-page" style="max-width:700px"></div>
-<div class="container forum-page hidden" id="forum-page" style="max-width:760px"></div>
-<div class="container adaptive-page hidden" id="adaptive-page" style="max-width:1200px"></div>
-<div class="container events-page hidden" id="events-page" style="max-width:960px"></div>
+<div class="container learn-page hidden" id="learn-page"></div>
+<div class="container mock-page hidden" id="mock-page"></div>
+<div class="container forum-page hidden" id="forum-page"></div>
+<div class="container adaptive-page hidden" id="adaptive-page"></div>
+<div class="container events-page hidden" id="events-page"></div>
 
 <!-- ═══ PAGE: RESOURCES ═══ -->
-<div class="container resources-page hidden" id="resources-page" style="max-width:760px"></div>
+<div class="container resources-page hidden" id="resources-page"></div>
 
 <script>
 
