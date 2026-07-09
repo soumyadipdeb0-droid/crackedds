@@ -609,8 +609,59 @@ body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,Bl
 
 
 const TOPICS = [
-{
-  id: "prob",
+  {
+    id: "de",
+    name: "Data Engineering",
+    icon: "🗄️",
+    color: "#3498DB",
+    questions: [
+      {
+        q: "Design a real-time ETL pipeline for tracking 10M active user events/sec with sliding window aggregations.",
+        a: "ARCHITECTURE OVERVIEW:\n1. INGESTION: Use Apache Kafka or AWS Kinesis as a highly partitioned message bus (e.g., 64-128 partitions based on throughput).\n2. STREAM PROCESSING: Use Apache Flink or Spark Streaming to consume from Kafka partitions. Leverage event-time processing and watermarks to handle late-arriving events.\n3. WINDOWING: Use a sliding window of 1 hour sliding every 1 minute. Store state using RocksDB state backend for scalability.\n4. SINK: Write aggregated metrics into a fast column-oriented DB (like ClickHouse or Druid) for sub-second dashboard queries.\n\nHOW TO SCALE & HANDLE FAILURES:\n- Partitioning Key: Use userId or eventType to distribute load evenly. Avoid hot keys.\n- Fault Tolerance: Enable checkpointing in Flink to ensure exactly-once semantics.\n- Backpressure: Flink naturally handles backpressure by slowing down the source reader pulling from Kafka.",
+        difficulty: "Hard",
+        tags: ["ETL", "Kafka", "Flink"],
+        companies: ["Walmart", "Netflix"]
+      },
+      {
+        q: "Explain Row-oriented vs Column-oriented databases (e.g. Postgres vs ClickHouse/Snowflake) and when to use which.",
+        a: "ROW-ORIENTED (OLTP):\n- Storage: Stores entire rows contiguously on disk.\n- Strengths: Extremely fast for transactional CRUD operations, single-row lookups, and updates (e.g., updating user password or inserting order).\n- Use Case: Relational operational databases (PostgreSQL, MySQL).\n\nCOLUMN-ORIENTED (OLAP):\n- Storage: Stores values of the same column contiguously on disk.\n- Strengths: Highly compressed on disk. Extremely fast for aggregate queries over specific columns (e.g., SELECT AVG(price) FROM orders) because it only reads the requested columns, ignoring the rest.\n- Use Case: Data Warehousing and Analytical Querying (ClickHouse, Snowflake, BigQuery, Redshift).",
+        difficulty: "Medium",
+        tags: ["Databases", "OLAP", "OLTP"],
+        companies: ["Meta", "Google"]
+      },
+      {
+        q: "Explain partition pruning and data skewness in Apache Spark. How do you resolve data skew?",
+        a: "PARTITION PRUNING:\n- Spark optimizes queries by reading only directory paths that match filter conditions (e.g., date='2026-07-10'), preventing full table scans on disk.\n\nDATA SKEWNESS:\n- Occurs when data is unevenly distributed across partitions. One task takes 10x longer to process, stalling the entire stage.\n- SOLUTIONS:\n  1. SALTING: Appending a random prefix (0 to N-1) to the join key of the skewed dataset, and replicating the other dataset key N times. This splits the hot key across N tasks.\n  2. BROADCAST JOIN: If one table is small (<100MB), broadcast it to all executors, eliminating the need to shuffle the large skewed table.\n  3. Spark 3 Adaptive Query Execution (AQE): Automatically detects skew and splits large partitions into smaller subpartitions at runtime.",
+        difficulty: "Hard",
+        tags: ["Spark", "Optimization", "Data Skew"],
+        companies: ["Uber", "Amazon"]
+      }
+    ]
+  },
+  {
+    id: "da",
+    name: "Data Analytics & KPIs",
+    icon: "📈",
+    color: "#2ECC71",
+    questions: [
+      {
+        q: "Define cohort analysis. How would you calculate 30-day user retention using SQL?",
+        a: "COHORT ANALYSIS:\n- Grouping users based on a shared characteristic (usually sign-up date) and tracking their behavior over time. Helps diagnose if product improvements are increasing user retention.\n\nSQL IMPLEMENTATION (30-day retention):\n```sql\nWITH first_signup AS (\n  SELECT user_id, MIN(created_at)::date AS signup_date\n  FROM user_actions\n  GROUP BY user_id\n),\nretention AS (\n  SELECT f.user_id, f.signup_date, a.action_date::date - f.signup_date AS days_active\n  FROM first_signup f\n  JOIN user_actions a ON f.user_id = a.user_id\n)\nSELECT \n  signup_date, \n  COUNT(DISTINCT user_id) AS cohort_size,\n  COUNT(DISTINCT CASE WHEN days_active = 30 THEN user_id END) AS retained_30d,\n  ROUND(100.0 * COUNT(DISTINCT CASE WHEN days_active = 30 THEN user_id END) / COUNT(DISTINCT user_id), 2) || '%' AS retention_pct\nFROM retention\nGROUP BY signup_date\nORDER BY signup_date;\n```",
+        difficulty: "Medium",
+        tags: ["Cohort", "SQL", "Retention"],
+        companies: ["Meta", "Airbnb"]
+      },
+      {
+        q: "A retail store sees sales drop by 15% week-over-week. Walk me through your diagnostic analytics to find the root cause.",
+        a: "DIAGNOSTIC FRAMEWORK:\n1. DATA SANITY CHECK: Ensure tracking pixels, ingestion pipelines, or currency conversion rules didn't break.\n2. SEGMENTATION ANALYSIS:\n   - By Geography: Is the drop localized to a specific country or store location?\n   - By Product Category: Did a specific high-value category (e.g., electronics) tank, or is it flat across the board?\n   - By Device/Browser: Did web or app checkout rates drop due to a software release bug?\n3. FUNNEL ANALYSIS: Look at traffic sources (Organic, Paid). Did traffic decrease, or did the checkout conversion rate drop?\n4. EXTERNAL FACTORS: Check for holidays, competitor sales promotions, or payment gateway outages.",
+        difficulty: "Medium",
+        tags: ["Metrics", "Diagnostics", "Funnel"],
+        companies: ["Walmart", "Amazon"]
+      }
+    ]
+  },
+  {
+    id: "prob",
   name: "Probability & Statistics",
   icon: "🎲",
   color: "#F97316",
