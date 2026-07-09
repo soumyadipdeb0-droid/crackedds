@@ -3418,7 +3418,7 @@ function renderForumPage() {
     h += `<div style="background:var(--surface);border:1.5px dashed var(--border);border-radius:18px;padding:24px;margin-bottom:28px">
       <h4 style="font-family:'Outfit',sans-serif;font-weight:600;margin-bottom:14px;color:var(--text)">Create a New Post</h4>
       <input type="text" id="forum-post-title" class="ai-input" placeholder="Post Title (e.g. Google DS interview experience)" style="width:100%;margin-bottom:12px;padding:10px" value="${esc(S.newPostTitle)}" oninput="S.newPostTitle=this.value">
-      <textarea id="forum-post-content" class="ai-input" placeholder="What\'s on your mind? Share topics, question logs, or experience details..." style="width:100%;height:100px;resize:vertical;margin-bottom:16px;padding:12px" oninput="S.newPostContent=this.value">	ext(S.newPostContent)</textarea>
+      <textarea id="forum-post-content" class="ai-input" placeholder="What\'s on your mind? Share topics, question logs, or experience details..." style="width:100%;height:100px;resize:vertical;margin-bottom:16px;padding:12px" oninput="S.newPostContent=this.value">${esc(S.newPostContent)}</textarea>
       <button class="start-btn" onclick="act('forum-create-post')" style="background:var(--accent);font-size:13px;padding:10px 24px;border-radius:10px">Publish Post</button>
     </div>`;
     
@@ -3439,10 +3439,10 @@ function renderForumPage() {
           </div>
           <div style="flex:1">
             <h4 style="font-family:'Outfit',sans-serif;font-weight:600;font-size:15px;color:var(--accent);cursor:pointer;margin-bottom:6px" onclick="S.forumActivePostId=${p.id};renderForumPage()">${esc(p.title)}</h4>
-            <p style="font-size:12.5px;color:var(--text2);margin-bottom:12px;line-height:1.5">	ext(excerpt)</p>
+            <p style="font-size:12.5px;color:var(--text2);margin-bottom:12px;line-height:1.5">${esc(excerpt)}</p>
             <div style="display:flex;justify-content:space-between;align-items:center;font-size:10.5px;color:var(--text3)">
               <div>
-                Posted by <strong style="color:var(--text2)">${esc(p.author)}</strong> (s{pKarma} Karma) • ${new Date(p.createdAt).toLocaleDateString()}
+                Posted by <strong style="color:var(--text2)">${esc(p.author)}</strong> (${pKarma} Karma) • ${new Date(p.createdAt).toLocaleDateString()}
               </div>
               <div style="font-weight:600;color:var(--accent);cursor:pointer" onclick="S.forumActivePostId=${p.id};renderForumPage()">
                 💬 ${p.comments.length} comments
@@ -3453,6 +3453,7 @@ function renderForumPage() {
       }).join('');
     }
   }
+  el.innerHTML = h;
   bind();
 }
 
