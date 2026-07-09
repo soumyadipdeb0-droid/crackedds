@@ -3205,6 +3205,7 @@ function renderFullMockPage(){
           <button class="cs-tab-btn ${S.mockRole==='ds'?'active':''}" onclick="S.mockRole='ds';renderFullMockPage()">Data Scientist</button>
           <button class="cs-tab-btn ${S.mockRole==='mle'?'active':''}" onclick="S.mockRole='mle';renderFullMockPage()">ML Engineer</button>
           <button class="cs-tab-btn ${S.mockRole==='da'?'active':''}" onclick="S.mockRole='da';renderFullMockPage()">Data Analyst</button>
+          <button class="cs-tab-btn ${S.mockRole==='de'?'active':''}" onclick="S.mockRole='de';renderFullMockPage()">Data Engineer</button>
         </div>
       </div>
 
@@ -3564,6 +3565,8 @@ function renderAdaptivePage() {
             <button class="cs-tab-btn ${S.adaptiveFocus==='general'?'active':''}" onclick="S.adaptiveFocus='general';renderAdaptivePage()" style="flex:1;font-size:12px">General FAANG / SaaS</button>
             <button class="cs-tab-btn ${S.adaptiveFocus==='quant'?'active':''}" onclick="S.adaptiveFocus='quant';renderAdaptivePage()" style="flex:1;font-size:12px">Quant Finance (DE Shaw style)</button>
             <button class="cs-tab-btn ${S.adaptiveFocus==='supply'?'active':''}" onclick="S.adaptiveFocus='supply';renderAdaptivePage()" style="flex:1;font-size:12px">Supply Chain (Walmart style)</button>
+          <button class="cs-tab-btn ${S.adaptiveFocus==='de'?'active':''}" onclick="S.adaptiveFocus='de';renderAdaptivePage()" style="flex:1;font-size:12px">Data Engineering (ETL & Spark)</button>
+          <button class="cs-tab-btn ${S.adaptiveFocus==='mle'?'active':''}" onclick="S.adaptiveFocus='mle';renderAdaptivePage()" style="flex:1;font-size:12px">ML Engineering (MLOps & Serving)</button>
           </div>
         </div>
 
@@ -3665,7 +3668,11 @@ async function generateNextAdaptiveQuestion() {
   renderAdaptivePage();
 
   const levelLabel = S.adaptiveLevel;
-  const focusLabel = S.adaptiveFocus === 'quant' ? 'Quant Finance (DE Shaw style)' : S.adaptiveFocus === 'supply' ? 'Supply Chain (Walmart style)' : 'General FAANG / SaaS';
+  const focusLabel = S.adaptiveFocus === 'quant' ? 'Quant Finance (DE Shaw style)' : 
+                       S.adaptiveFocus === 'supply' ? 'Supply Chain (Walmart style)' : 
+                       S.adaptiveFocus === 'de' ? 'Data Engineering (ETL, distributed compute, schema design)' :
+                       S.adaptiveFocus === 'mle' ? 'Machine Learning Engineering (MLOps, serving latency, model compression)' :
+                       'General FAANG / SaaS';
   const difficulty = S.adaptiveDifficultyScore;
 
   // Compile a prompt for the model to generate a custom scenario-based question
