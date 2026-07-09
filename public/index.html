@@ -2288,6 +2288,7 @@ function act(a,d){
   switch(a){
     case'topic':S.view='topic';S.topicId=d.t;S.showAI=false;S.aiStarted=false;S.aiMessages=[];S.aiInput='';S.filter='all';S.companySearch='';S.companyFilter='';window.speechSynthesis.cancel();stopListening();break;
     case'home':S.view='home';break;
+    case'home-openq':S.view='quiz';S.topicId=d.t;S.qIndex=parseInt(d.qi);S.showAnswer=false;S.ideOutput='';S.showSchema=false;break;
     case'go-topic':S.view='topic';S.showAnswer=false;S.ideOutput='';S.showSchema=false;break;
     case'openq':S.view='quiz';S.qIndex=parseInt(d.qi);S.showAnswer=false;S.ideOutput='';S.showSchema=false;break;
     case'goq':S.qIndex=parseInt(d.qi);S.showAnswer=false;S.ideOutput='';break;
