@@ -51,6 +51,11 @@ export async function initDatabase() {
       UNIQUE(user_id, case_id)
     )
   `;
+
+  // Create database indexes to optimize query speeds
+  await sql`CREATE INDEX IF NOT EXISTS idx_progress_user_id ON progress(user_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_bookmarks_user_id ON bookmarks(user_id)`;
+  await sql`CREATE INDEX IF NOT EXISTS idx_case_progress_user_id ON case_progress(user_id)`;
 }
 let dbInitialized = false;
 async function ensureDbInit() {
