@@ -2699,16 +2699,15 @@ function updateThemeIcon(t){
 initTheme();
 initStreak();
   try {
-    const cachedJobs = localStorage.getItem('ck_jobs_list');
-    if (cachedJobs && cachedJobs.includes('Supply Chain Optimization')) {
-      localStorage.removeItem('ck_jobs_list'); // force reload default real jobs
+    const cachedEv = localStorage.getItem('ck_events_list');
+    if (cachedEv && !cachedEv.includes('Kaggle ARC Prize')) {
+      localStorage.removeItem('ck_events_list');
     }
   } catch(e) {}
-  
   try {
-    const cached = localStorage.getItem('ck_events_list');
-    if (cached && cached.includes('Walmart Tech Talk')) {
-      localStorage.removeItem('ck_events_list'); // force reload default real events
+    const cachedJobs = localStorage.getItem('ck_jobs_list');
+    if (cachedJobs && !cachedJobs.includes('D. E. Shaw India')) {
+      localStorage.removeItem('ck_jobs_list');
     }
   } catch(e) {}
   
