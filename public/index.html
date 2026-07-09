@@ -2700,13 +2700,13 @@ initTheme();
 initStreak();
   try {
     const cachedEv = localStorage.getItem('ck_events_list');
-    if (cachedEv && !cachedEv.includes('Kaggle ARC Prize')) {
+    if (cachedEv && (!cachedEv.includes('Kaggle ARC Prize') || !cachedEv.includes('linkedin.com'))) {
       localStorage.removeItem('ck_events_list');
     }
   } catch(e) {}
   try {
     const cachedJobs = localStorage.getItem('ck_jobs_list');
-    if (cachedJobs && !cachedJobs.includes('D. E. Shaw India')) {
+    if (cachedJobs && (!cachedJobs.includes('D. E. Shaw India') || !cachedJobs.includes('linkedin.com'))) {
       localStorage.removeItem('ck_jobs_list');
     }
   } catch(e) {}
@@ -3826,11 +3826,11 @@ function getEventsData() {
     {
       id: 5,
       title: "D. E. Shaw Quantitative Research Recruitment Drive 2026",
-      description: "Application window opens for Quantitative Analyst, Quantitative Researcher, and Machine Learning Researcher roles globally. Apply early on their careers portal.",
+      description: "Application window opens for Quantitative Analyst, Quantitative Researcher, and Machine Learning Researcher roles globally. Track details on their official LinkedIn corporate board.",
       type: "webinar",
       date: "2026-09-01",
       organizer: "D. E. Shaw & Co.",
-      link: "https://www.deshaw.com/recruit",
+      link: "https://www.linkedin.com/company/d-e-shaw-group/",
       tags: ["Quant Research", "DE Shaw", "Careers"]
     }
   ];
@@ -3998,7 +3998,7 @@ function getJobsData() {
       salary: "Competitive Base + Performance Bonus",
       description: "Build mathematical models, analyze financial data streams, and design trading pipelines using probability, statistics, and high-performance Python/C++ scripts.",
       requirements: "Strong background in mathematics, statistics, physics, or computer science from top-tier institutions. Proficiency in Python and statistical packages.",
-      link: "https://www.deshawindia.com/careers",
+      link: "https://www.linkedin.com/company/d-e-shaw-group/jobs/",
       tags: ["Quant", "Finance", "Python"]
     },
     {
