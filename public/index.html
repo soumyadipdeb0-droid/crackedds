@@ -2391,11 +2391,11 @@ function startListening(){
   if (!SpeechRec) {
     alert("Speech recognition is not supported in this browser. Please use Google Chrome or Safari.");
     S.isListening = false;
-    render();
+    if (currentPage === 'mock') renderFullMockPage(); else render();
     return;
   }
   recognition = new SpeechRec();
-  recognition.continuous = false;
+  recognition.continuous = true;
   recognition.interimResults = false;
   recognition.lang = 'en-US';
   recognition.onstart = () => {
@@ -2403,17 +2403,26 @@ function startListening(){
     if (currentPage === 'mock') renderFullMockPage(); else render();
   };
   recognition.onresult = (e) => {
-    const text = e.results[0][0].transcript;
-    if (currentPage === 'mock') {
-      S.mockInput = (S.mockInput + ' ' + text).trim();
-      renderFullMockPage();
-    } else {
-      S.aiInput = (S.aiInput + ' ' + text).trim();
-      render();
+    let resultText = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) {
+        resultText += e.results[i][0].transcript + ' ';
+      }
+    }
+    if (resultText.trim()) {
+      if (currentPage === 'mock') {
+        const inp = document.getElementById('mock-text');
+        S.mockInput = (S.mockInput + ' ' + resultText.trim()).trim();
+        if (inp) inp.value = S.mockInput;
+      } else {
+        const inp = document.getElementById('or-key-input');
+        S.aiInput = (S.aiInput + ' ' + resultText.trim()).trim();
+        if (inp) inp.value = S.aiInput;
+      }
     }
   };
   recognition.onerror = (e) => {
-    console.error(e);
+    console.error('Speech error:', e);
     S.isListening = false;
     if (currentPage === 'mock') renderFullMockPage(); else render();
   };
