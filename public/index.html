@@ -19,17 +19,18 @@ const API_BASE = (window.location.hostname === 'localhost' || window.location.ho
 // Replace with your Google Client ID from Google Cloud Console
 const GOOGLE_CLIENT_ID = '95217093752-jgqimpb7carlontmig73jquu5jrgiiia.apps.googleusercontent.com';
 </script>
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Inter:wght@300;400;500;600;700&family=Source+Code+Pro:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#FAFAF8;--surface:#fff;--surface2:#F5F4F0;--border:#E8E6E1;--border2:#D4D1C9;
-  --text:#1A1915;--text2:#5C594F;--text3:#9B978C;
-  --accent:#C8553D;--accent2:#2563EB;--accent3:#0E7C61;
-  --green:#15803D;--yellow:#A16207;--red:#B91C1C;
-  --code-bg:#F7F6F3;--shadow:0 1px 3px rgba(0,0,0,.04),0 4px 12px rgba(0,0,0,.03)
+  --bg:#f8f9fa;--surface:#ffffff;--surface2:#f1f3f4;--border:#dadce0;--border2:#bdc1c6;
+  --text:#202124;--text2:#5f6368;--text3:#80868b;
+  --accent:#1a73e8;--accent2:#1a73e8;--accent3:#188038;
+  --green:#1e8e3e;--yellow:#f9ab00;--red:#d93025;
+  --code-bg:#f8f9fa;--shadow:0 1px 2px 0 rgba(60,64,67,0.3),0 1px 3px 1px rgba(60,64,67,0.15)
 }
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--text);font-family:'Source Sans 3',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.6}
-::selection{background:rgba(200,85,61,.12)}
+body{background:var(--bg);color:var(--text);font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;-webkit-font-smoothing:antialiased;font-size:15px;line-height:1.6}
+::selection{background:rgba(26,115,232,.12)}
 ::-webkit-scrollbar{width:7px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:#D4D1C9;border-radius:4px}::-webkit-scrollbar-thumb:hover{background:#B8B4AB}
 .container{max-width:900px;margin:0 auto;padding:48px 32px 100px;position:relative}
 @keyframes enter{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
@@ -38,8 +39,8 @@ body{background:var(--bg);color:var(--text);font-family:'Source Sans 3',-apple-s
 
 /* ── Header ── */
 .header{display:flex;align-items:center;gap:14px;margin-bottom:36px;padding-bottom:24px;border-bottom:1px solid var(--border)}
-.logo-mark{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font:700 16px/1 'Newsreader',serif;flex-shrink:0}
-.header h1{font:300 24px/1.2 'Newsreader',serif;color:var(--text)}
+.logo-mark{width:40px;height:40px;background:var(--accent);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font:700 16px/1 'Outfit',sans-serif;flex-shrink:0}
+.header h1{font:500 24px/1.2 'Outfit',sans-serif;color:var(--text)}
 .header h1 strong{font-weight:600}
 .streak{font:600 15px/1 'Source Sans 3',sans-serif;color:var(--accent);white-space:nowrap;margin-left:auto}
 
@@ -414,14 +415,14 @@ body{background:var(--bg);color:var(--text);font-family:'Source Sans 3',-apple-s
 
 /* ── Dark Mode ── */
 [data-theme="dark"]{
-  --bg:#141413;--surface:#1C1C1A;--surface2:#242422;--border:#2E2E2A;--border2:#3A3A35;
-  --text:#ffffff;--text2:#f0f0f0;--text3:#7A776E;
-  --accent:#E8774D;--accent2:#5B9CF5;--accent3:#34D399;
-  --green:#22C55E;--yellow:#FACC15;--red:#EF4444;
-  --code-bg:#1E1E1C;--shadow:0 1px 3px rgba(0,0,0,.2),0 4px 12px rgba(0,0,0,.15)
+  --bg:#131314;--surface:#1e1e1f;--surface2:#2c2c2e;--border:#3c4043;--border2:#5f6368;
+  --text:#e3e3e3;--text2:#c4c7c5;--text3:#8e918f;
+  --accent:#a8c7fa;--accent2:#a8c7fa;--accent3:#c4eed0;
+  --green:#81c995;--yellow:#fdd663;--red:#f28b82;
+  --code-bg:#1e1e1f;--shadow:0 1px 3px rgba(0,0,0,.2),0 4px 12px rgba(0,0,0,.3)
 }
 [data-theme="dark"] body{background:var(--bg);color:var(--text)}
-[data-theme="dark"] ::selection{background:rgba(232,119,77,.2)}
+[data-theme="dark"] ::selection{background:rgba(168,199,250,.2)}
 [data-theme="dark"] ::-webkit-scrollbar-thumb{background:#3A3A35}
 [data-theme="dark"] .top-nav{background:rgba(20,20,19,.92);border-bottom-color:var(--border)}
 [data-theme="dark"] .nav-tab.active{color:var(--accent);background:rgba(232,119,77,.08)}
