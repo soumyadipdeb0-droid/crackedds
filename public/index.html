@@ -3277,7 +3277,7 @@ function getForumData() {
       title: "How to prepare for DE Shaw's technical round?",
       content: "I have a technical screen scheduled with DE Shaw in two weeks. What are the key areas to focus on in probability and linear regression?",
       author: "Soumyadip",
-      authorEmail: "soumyadipdeb0@gmail.com",
+      authorEmail: "deshaw_prep@example.com",
       createdAt: new Date(Date.now() - 3600000 * 24 * 3).toISOString(), // 3 days ago
       upvotes: 12,
       upvotedBy: [],
@@ -3319,14 +3319,16 @@ function saveForumData(posts) {
 
 function getUserKarma(email) {
   const posts = getForumData();
-  let karma = 10; // Base score
+  let karma = 0;
   posts.forEach(p => {
     if (p.authorEmail === email) {
-      karma += (p.upvotes || 0) * 5;
+      // 10 points for creating a post, plus 10 points for each additional upvote it receives
+      karma += 10 + Math.max(0, (p.upvotes - 1)) * 10;
     }
     p.comments.forEach(c => {
       if (c.authorEmail === email) {
-        karma += (c.upvotes || 0) * 2;
+        // 5 points for commenting, plus 5 points for each upvote it receives
+        karma += 5 + (c.upvotes || 0) * 5;
       }
     });
   });
