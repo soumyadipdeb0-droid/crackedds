@@ -4846,20 +4846,7 @@ function handleNLSubscribe(btn){
 var currentUser = null;
 var authMode = 'login';
 
-// API helper
-async function api(endpoint, options = {}) {
-  var token = localStorage.getItem('crackedds_token');
-  var headers = { 'Content-Type': 'application/json' };
-  if (token) headers['Authorization'] = 'Bearer ' + token;
-  
-  var res = await fetch(API_BASE + endpoint, {
-    ...options,
-    headers: { ...headers, ...options.headers }
-  });
-  var data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Request failed');
-  return data;
-}
+// API helper - removed duplicate to use robust definition defined above
 
 // Auth modal controls
 function openAuth() {
