@@ -3295,22 +3295,27 @@ async function api(endpoint, options = {}) {
       headers: { ...headers, ...options.headers }
     });
     
-    let data;
+    let data = {};
     try {
-      data = await res.json();
-    } catch(err) {
-      if (!res.ok) {
-        const errorHtml = new Error('Server error: ' + res.status);
-        errorHtml.isServerResponse = true;
-        throw errorHtml;
+      const text = await res.text();
+      try {
+        data = JSON.parse(text);
+      } catch(err) {
+        data = { error: text };
       }
+    } catch(err) {
       data = {};
     }
 
     if (!res.ok) {
-      const serverErr = new Error(data.error || 'Request failed');
-      serverErr.isServerResponse = true;
-      throw serverErr;
+      if ([400, 401, 403, 409].includes(res.status)) {
+        const errMsg = (typeof data.error === 'string' && data.error.length < 100) ? data.error : 'Request failed';
+        const serverErr = new Error(errMsg);
+        serverErr.isServerResponse = true;
+        throw serverErr;
+      } else {
+        throw new Error('API server status: ' + res.status);
+      }
     }
     return data;
   } catch (e) {
