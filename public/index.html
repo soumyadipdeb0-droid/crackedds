@@ -3196,14 +3196,37 @@ function handleLocalMockApi(endpoint, options) {
     return { user: clientUser, token };
   }
   
-  if (endpoint === '/auth/me' && method === 'GET') {
+    if (endpoint === '/auth/me' && method === 'GET') {
     if (!currentUserToken) throw new Error('Not authenticated');
     if (currentUserToken === 'mock_jwt_token_999') {
       return { user: { id: 999, email: 'google-user@example.com', name: 'Google User', streak: S.streak || 0 } };
     }
-    const userId = parseInt(currentUserToken.replace('mock_jwt_token_', ''));
-    const user = users.find(u => u.id === userId);
-    if (!user) throw new Error('User not found');
+    let userId = parseInt(currentUserToken.replace('mock_jwt_token_', ''));
+    if (isNaN(userId)) {
+      userId = 1000; // default local session fallback ID for external JWT tokens
+    }
+    let user = users.find(u => u.id === userId);
+    if (!user) {
+      // Recreate user dynamically using values stored in localStorage to prevent force logout
+      const stored = localStorage.getItem('crackedds_user');
+      if (stored) {
+        try {
+          const parsed = JSON.parse(stored);
+          user = {
+            id: userId,
+            email: parsed.email || 'user@example.com',
+            name: parsed.name || 'User',
+            streak: parsed.streak || 0
+          };
+          users.push(user);
+          localStorage.setItem('ck_mock_users', JSON.stringify(users));
+        } catch(e) {
+          throw new Error('User not found');
+        }
+      } else {
+        throw new Error('User not found');
+      }
+    }
     const clientUser = { id: user.id, email: user.email, name: user.name, streak: S.streak || user.streak };
     return { user: clientUser };
   }
@@ -3223,16 +3246,35 @@ async function api(endpoint, options = {}) {
   var token = localStorage.getItem('crackedds_token');
   var headers = { 'Content-Type': 'application/json' };
   if (token) headers['Authorization'] = 'Bearer ' + token;
-  
+
   try {
     var res = await fetch(API_BASE + endpoint, {
       ...options,
       headers: { ...headers, ...options.headers }
     });
-    var data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Request failed');
+    
+    let data;
+    try {
+      data = await res.json();
+    } catch(err) {
+      if (!res.ok) {
+        const errorHtml = new Error('Server error: ' + res.status);
+        errorHtml.isServerResponse = true;
+        throw errorHtml;
+      }
+      data = {};
+    }
+
+    if (!res.ok) {
+      const serverErr = new Error(data.error || 'Request failed');
+      serverErr.isServerResponse = true;
+      throw serverErr;
+    }
     return data;
   } catch (e) {
+    if (e.isServerResponse) {
+      throw e;
+    }
     console.warn('API fetch failed, falling back to local database mock:', e);
     return handleLocalMockApi(endpoint, options);
   }
