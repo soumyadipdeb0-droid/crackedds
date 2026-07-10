@@ -635,6 +635,27 @@ const TOPICS = [
         difficulty: "Hard",
         tags: ["Spark", "Optimization", "Data Skew"],
         companies: ["Uber", "Amazon"]
+      },
+      {
+        q: "Design a Change Data Capture (CDC) pipeline to sync transactional MySQL databases with a Snowflake data warehouse.",
+        a: "CDC SYSTEM ARCHITECTURE:\n1. CAPTURE: Use Debezium to read the MySQL binary log (binlog) continuously. This captures inserts, updates, and deletes asynchronously with zero impact on transactional throughput.\n2. BUFFER: Stream Debezium event logs into Apache Kafka partitioned by primary key to guarantee order execution.\n3. INGESTION: Use Kafka Connect Snowflake Sink Connector or Snowpipe. Snowpipe automatically detects new event files written to AWS S3 / Azure Blob and copies them.\n4. RECONCILIATION: Write raw change logs to a staging table in Snowflake. Run merge statements nightly or micro-batch to update the final target table (scd-2 or current state snapshot).",
+        difficulty: "Hard",
+        tags: ["CDC", "Debezium", "Snowflake"],
+        companies: ["Netflix", "DoorDash"]
+      },
+      {
+        q: "What is backpressure in stream processing? How do Flink and Kafka handle it?",
+        a: "BACKPRESSURE DEFINITION:\n- Occurs when the downstream consumer cannot keep up with the rate of data produced by the upstream sender. If unhandled, buffers overflow, causing OutOfMemory errors.\n\nHOW KAFKA HANDLES IT:\n- Pull-based architecture. Kafka brokers store messages on disk, and consumers pull data when they have capacity. If a consumer slows down, it simply stops pulling, leaving data in the broker queue.\n\nHOW FLINK HANDLES IT:\n- Flink uses credit-based flow control over netty channels. Each receiver has limited buffers. The sender can only transmit data if the receiver has enough 'credits' (available buffers). If credits drop to zero, Flink stops reading from the upstream buffers, propagating backpressure all the way to the source.",
+        difficulty: "Medium",
+        tags: ["Streaming", "Flink", "Kafka"],
+        companies: ["Uber", "Lyft"]
+      },
+      {
+        q: "Explain the CAP Theorem. Which guarantees do Cassandra, PostgreSQL, and DynamoDB choose under network partition?",
+        a: "CAP THEOREM OVERVIEW:\n- Under a network partition (P), a distributed system can guarantee Consistency (C) or Availability (A), but not both.\n\nPostgreSQL (Single Instance / Primary-Replica):\n- Chooses Consistency (CP). If a replica goes offline, it stops accepting writes to guarantee data accuracy.\n\nApache Cassandra & DynamoDB:\n- Choose Availability (AP). They use masterless ring structures and consistent hashing. During partition, nodes continue accepting writes locally. They resolve conflicts later using Last-Write-Wins or Vector Clocks, prioritizing uptime over instant synchronization.",
+        difficulty: "Medium",
+        tags: ["Systems", "NoSQL", "CAP"],
+        companies: ["Google", "Amazon"]
       }
     ]
   },
@@ -657,6 +678,27 @@ const TOPICS = [
         difficulty: "Medium",
         tags: ["Metrics", "Diagnostics", "Funnel"],
         companies: ["Walmart", "Amazon"]
+      },
+      {
+        q: "Explain A/B testing Sample Size determination. What factors impact the sample size required?",
+        a: "SAMPLE SIZE FACTORS:\nThe sample size required for an A/B test is calculated using statistics rules and depends on:\n1. BASELINE CONVERSION RATE (p): The historical conversion rate. Lower baseline rates require larger samples to detect the same relative change.\n2. MINIMUM DETECTABLE EFFECT (MDE): The smallest difference you care about detecting (e.g., +1% conversion). Smaller MDE requires exponentially larger samples (sample size is proportional to 1/MDE^2).\n3. SIGNIFICANCE LEVEL (alpha): Usually 5% (p=0.05). Probability of Type I error (false positive). Lower alpha requires larger samples.\n4. STATISTICAL POWER (1-beta): Usually 80%. Probability of Type II error (false negative). Higher power requires larger samples.",
+        difficulty: "Medium",
+        tags: ["Experimentation", "Stats", "AB Testing"],
+        companies: ["Google", "Meta"]
+      },
+      {
+        q: "What is Simpson's Paradox? Provide a real-world example from product analytics.",
+        a: "SIMPSON'S PARADOX DEFINITION:\n- A statistical phenomenon where a trend appears in several groups of data but disappears or reverses when the groups are combined.\n\nPRODUCT ANALYTICS EXAMPLE:\n- A company launches a new signup flow (B) and tests it against the old flow (A). Overall, B has a lower conversion rate than A (A: 10%, B: 9%).\n- However, when segmented by device type:\n  * Mobile: B conversion is higher than A (A: 5%, B: 6%)\n  * Desktop: B conversion is higher than A (A: 15%, B: 16%)\n- REASON: B had a much higher proportion of mobile traffic (which has a lower baseline conversion rate of 5%). The group imbalance skewed the overall aggregated average, making B look worse overall even though it won on every individual device category.",
+        difficulty: "Hard",
+        tags: ["Stats", "Analytics", "Paradox"],
+        companies: ["Airbnb", "Uber"]
+      },
+      {
+        q: "Define SaaS LTV and CAC. What is a healthy ratio, and how do you calculate LTV for subscription churn?",
+        a: "DEFINITIONS:\n- CAC: Total marketing/sales costs divided by new customers acquired.\n- LTV: Total gross profit a customer generates during their lifetime.\n\nCALCULATION:\n- LTV = Average Revenue Per User (ARPU) × Gross Margin (%) / Churn Rate (%)\n  * Example: ARPU = $100/mo, Gross Margin = 80%, Monthly Churn = 2%\n  * LTV = ($100 * 0.80) / 0.02 = $4,000.\n\nHEALTHY RATIO:\n- A healthy SaaS ratio is LTV:CAC >= 3:1. A ratio of 1:1 means you are losing money when factoring in operating expenses, while a ratio of 10:1 means you are underinvesting in growth marketing.",
+        difficulty: "Medium",
+        tags: ["KPIs", "SaaS", "Finance"],
+        companies: ["Stripe", "HubSpot"]
       }
     ]
   },
