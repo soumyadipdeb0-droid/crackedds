@@ -4000,13 +4000,12 @@ async function renderEventsPage() {
         <div class="shimmer" style="height:14px;width:280px;margin:0 auto;border-radius:4px"></div>
       </div>`;
       try {
-        const r = await fetch(API_BASE + '/events');
-        if (r.ok) {
-          const data = await r.json();
-          S.events = data.events || [];
+        const data = await api('/events');
+        if (data && Array.isArray(data.events)) {
+          S.events = data.events;
           S.eventsUsingLocal = false;
         } else {
-          throw new Error('API status not OK');
+          throw new Error('Invalid response structure');
         }
       } catch(e) {
         console.warn('Events API failed, falling back to local storage:', e);
@@ -4250,13 +4249,12 @@ async function renderJobsPage() {
         <div class="shimmer" style="height:14px;width:280px;margin:0 auto;border-radius:4px"></div>
       </div>`;
       try {
-        const r = await fetch(API_BASE + '/jobs');
-        if (r.ok) {
-          const data = await r.json();
-          S.jobs = data.jobs || [];
+        const data = await api('/jobs');
+        if (data && Array.isArray(data.jobs)) {
+          S.jobs = data.jobs;
           S.jobsUsingLocal = false;
         } else {
-          throw new Error('API status not OK');
+          throw new Error('Invalid response structure');
         }
       } catch(e) {
         console.warn('Jobs API failed, falling back to local storage:', e);
