@@ -3314,15 +3314,21 @@ async function api(endpoint, options = {}) {
     });
     
     let data = {};
+    let isJson = false;
     try {
       const text = await res.text();
       try {
         data = JSON.parse(text);
+        isJson = true;
       } catch(err) {
         data = { error: text };
       }
     } catch(err) {
       data = {};
+    }
+
+    if (!isJson) {
+      throw new Error('Response is not valid JSON');
     }
 
     if (!res.ok) {
