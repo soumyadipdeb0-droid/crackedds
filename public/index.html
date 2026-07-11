@@ -2890,8 +2890,7 @@ function goToPractice(el){
 // ═══════════════════════════════════════════════════════════
 var currentPage='practice';
 
-function switchPage(page){
-  currentPage=page;
+function switchPage(page){   currentPage=page;   if (window.location.hash !== '#' + page) {     history.pushState(null, null, '#' + page);   }
   // Toggle page visibility
   document.getElementById('app').style.display=page==='practice'?'':'none';
   document.getElementById('cases-page').classList.toggle('hidden',page!=='cases');
@@ -5153,7 +5152,28 @@ toggleBookmark = function(topicId, qIdx) {
   }
 })();
 
-render();
+// Hash routing listener
+  window.addEventListener('hashchange', function() {
+    const hash = window.location.hash.substring(1);
+    const validPages = ['practice', 'cases', 'learn', 'resources', 'mock', 'forum', 'adaptive', 'events', 'jobs'];
+    if (validPages.includes(hash) && currentPage !== hash) {
+      switchPage(hash);
+    }
+  });
+
+  // Initial routing triggers
+  (function initRouting() {
+    const hash = window.location.hash.substring(1);
+    const validPages = ['practice', 'cases', 'learn', 'resources', 'mock', 'forum', 'adaptive', 'events', 'jobs'];
+    if (validPages.includes(hash)) {
+      switchPage(hash);
+    } else {
+      history.replaceState(null, null, '#practice');
+      switchPage('practice');
+    }
+  })();
+
+  render();
 </script>
 </body>
 </html>
