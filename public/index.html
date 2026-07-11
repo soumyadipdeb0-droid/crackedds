@@ -14,6 +14,24 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js"></script>
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <script>
+// Self-healing LocalStorage Cache Cleaner
+(function selfHealLocalStorage() {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (!key) continue;
+      const val = localStorage.getItem(key);
+      if (val && (val.trim().startsWith('<') || val.trim().startsWith('The page') || val.trim().startsWith('Cannot GET') || val.trim().startsWith('Server error'))) {
+        console.warn('Self-heal: Wiping corrupted HTML/error cache under key:', key);
+        localStorage.removeItem(key);
+        i--;
+      }
+    }
+  } catch(e) {
+    console.error('Self-heal failed:', e);
+  }
+})();
+
 // API Configuration - automatically uses relative paths on Vercel
 const API_BASE = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') ? 'http://' + window.location.hostname + ':3000/api' : '/api';
 // Replace with your Google Client ID from Google Cloud Console
@@ -4165,8 +4183,17 @@ async function submitEventForm() {
       S.eventsFormOpen = false;
       renderEventsPage();
     } else {
-      const err = await r.json();
-      alert('Event publication failed: ' + err.message);
+      let errMsg = 'Request failed';
+      try {
+        const err = await r.json();
+        errMsg = err.message || errMsg;
+      } catch(e) {
+        try {
+          const txt = await r.text();
+          errMsg = txt.length < 100 ? txt : errMsg;
+        } catch(e2) {}
+      }
+      alert('Event publication failed: ' + errMsg);
     }
   } catch(e) {
     alert('Failed to publish event: ' + e.message);
@@ -4441,8 +4468,17 @@ async function submitJobForm() {
       S.jobsFormOpen = false;
       renderJobsPage();
     } else {
-      const err = await r.json();
-      alert('Job publication failed: ' + err.message);
+      let errMsg = 'Request failed';
+      try {
+        const err = await r.json();
+        errMsg = err.message || errMsg;
+      } catch(e) {
+        try {
+          const txt = await r.text();
+          errMsg = txt.length < 100 ? txt : errMsg;
+        } catch(e2) {}
+      }
+      alert('Job publication failed: ' + errMsg);
     }
   } catch(e) {
     alert('Failed to publish job: ' + e.message);
